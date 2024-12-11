@@ -1,10 +1,19 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import time
 from typing import List, Dict
+import os
 
-app = Flask(__name__)
-CORS(app)
+app = Flask(__name__, static_folder='dist', static_url_path='')
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    # If the path exists in the build folder, serve that file
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        # Otherwise, serve the index.html (for React Router)
+        return send_from_directory(app.static_folder, 'index.html')
 
 # Dummy database to store projects
 dummy_projects: List[Dict] = [
@@ -34,7 +43,7 @@ def search_projects(query: str) -> List[Dict]:
     """
     return dummy_projects
 
-@app.route('/api/projects/search', methods=['POST'])
+@app.route('/api/search_projects', methods=['POST'])
 def search():
     data = request.get_json()
     query = data.get('query', '')
@@ -47,7 +56,7 @@ def search():
     print(f"Returning results: {results}")  # Add this line
     return jsonify({"results": results})
 
-@app.route('/api/projects', methods=['POST'])
+@app.route('/api/add_project', methods=['POST'])
 def add_project():
     data = request.get_json()
     

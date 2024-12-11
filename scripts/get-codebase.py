@@ -6,7 +6,7 @@ directory = 'D:/projects/project_search/'
 
 files = [
 
-     #'backend/enhance.py',
+     'backend/app.py',
  
     'frontend/src/components/ui/button.tsx',
     'frontend/src/components/ui/card.tsx',

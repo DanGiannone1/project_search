@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, Plus, Github, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,7 @@ const ProjectSearch = () => {
     
     setIsSearching(true);
     try {
-      const response = await fetch('http://localhost:5000/api/projects/search', {
+      const response = await fetch('/api/search_projects', {
             method: 'POST',
             headers: {
             'Content-Type': 'application/json',
@@ -60,7 +60,7 @@ const ProjectSearch = () => {
 
   const handleSubmitProject = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/projects', {
+      const response = await fetch('/api/add_projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
