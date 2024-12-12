@@ -29,5 +29,7 @@
         "env.bak{,/**}",
         "venv.bak{,/**}",
         ".vscode{,/**}"
-    ]
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/945b6587-1495-44c5-bfaa-df7f0e1a6a9d/resourceGroups/djg-sandbox/providers/Microsoft.Web/sites/codewith-project-search",
+    "appService.deploySubpath": "backend"
 }

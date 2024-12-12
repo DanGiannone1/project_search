@@ -60,7 +60,7 @@ const ProjectSearch = () => {
 
   const handleSubmitProject = async () => {
     try {
-      const response = await fetch('/api/add_projects', {
+      const response = await fetch('/api/add_project', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,17 +92,14 @@ const ProjectSearch = () => {
         <CardContent className="pt-6">
           <div className="space-y-6">
             <div className="flex flex-col gap-4">
-              <div className="relative">
+            <div className="relative">
                 <Textarea
-                  placeholder="Describe the project you're looking for..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="text-lg pr-12"
+                    placeholder="Describe the project you're looking for..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="text-lg pr-12"
                 />
-                {isSearching && (
-                  <Loader2 className="w-5 h-5 absolute right-4 top-3.5 animate-spin text-muted-foreground" />
-                )}
-              </div>
+                </div>
 
               <div className="flex justify-end">
                 <Button
