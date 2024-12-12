@@ -207,7 +207,7 @@ function ProjectSearch() {
                 <CardContent className="p-6 space-y-3">
                   {result.projectName && (
                     // Apply the new teal→cyan gradient for project name
-                    <h3 className="text-3xl font-extrabold leading-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400 font-sans">
+                    <h3 className="text-3xl font-extrabold leading-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-cyan-500 font-sans">
                       {result.projectName}
                     </h3>
                   )}
