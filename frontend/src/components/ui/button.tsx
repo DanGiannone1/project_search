@@ -15,7 +15,10 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         gradient: "bg-gradient-to-r from-blue-700 via-blue-600 to-blue-800 text-white shadow-lg hover:from-blue-600 hover:via-blue-500 hover:to-blue-700 focus-visible:ring-blue-400",
-        darkBlue: "bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-xl hover:bg-blue-800 focus-visible:ring-blue-700"
+        darkBlue: "bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-xl hover:bg-blue-800 focus-visible:ring-blue-700",
+
+        // New accent gradient variant:
+        accentGradient: "bg-gradient-to-r from-teal-400 to-cyan-400 text-white shadow-lg hover:from-teal-700 hover:to-cyan-700 focus-visible:ring-cyan-400"
       },
       size: {
         default: "h-9 px-4 py-2",

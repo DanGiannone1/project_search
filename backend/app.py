@@ -12,8 +12,6 @@ from dotenv import load_dotenv
 import base64
 import json
 
-
-
 app = Flask(__name__, static_folder='dist', static_url_path='')
 CORS(app)  # Enable CORS
 
@@ -49,8 +47,6 @@ def generate_document_id(github_url: str) -> str:
 def generate_embeddings(text, model="text-embedding-ada-002"): # model = "deployment_name"
     return aoai_client.embeddings.create(input = [text], model=model).data[0].embedding
 
-
-app = Flask(__name__, static_folder='dist', static_url_path='')
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -61,37 +57,9 @@ def serve(path):
         # Otherwise, serve the index.html (for React Router)
         return send_from_directory(app.static_folder, 'index.html')
 
-# Dummy database to store projects
-dummy_projects: List[Dict] = [
-    {
-        "id": 1,
-        "description": "A machine learning project that classifies images using TensorFlow",
-        "githubUrl": "https://github.com/example/ml-classifier",
-        "tags": ["machine-learning", "tensorflow", "computer-vision"]
-    },
-    {
-        "id": 2,
-        "description": "React component library with customizable themes",
-        "githubUrl": "https://github.com/example/react-components",
-        "tags": ["react", "ui-library", "frontend"]
-    },
-    {
-        "id": 3,
-        "description": "Python backend API using FastAPI and PostgreSQL",
-        "githubUrl": "https://github.com/example/fastapi-backend",
-        "tags": ["python", "fastapi", "postgresql"]
-    }
-]
-
 def search_projects(query: str) -> List[Dict]:
     """
     Search for projects using both text and vector search in Azure Cognitive Search.
-    
-    Args:
-        query (str): The search query from the user
-        
-    Returns:
-        List[Dict]: List of matching projects with their details
     """
     try:
         # Generate embeddings for the search query
@@ -108,7 +76,7 @@ def search_projects(query: str) -> List[Dict]:
         results = search_client.search(
             search_text=query,
             vector_queries=[vector_query],
-            select=["id", "description", "github_url", "owner"],
+            select=["id", "project_name", "description", "github_url", "owner"],
             top=10
         )
         
@@ -117,9 +85,10 @@ def search_projects(query: str) -> List[Dict]:
         for result in results:
             project = {
                 "id": result["id"],
-                "description": result["description"],
-                "githubUrl": result["github_url"],  # Convert snake_case to camelCase for frontend
-                "owner": result["owner"]
+                "projectName": result.get("project_name", ""),  # Convert snake_case to camelCase for frontend
+                "description": result.get("description", ""),
+                "githubUrl": result.get("github_url", ""),  # Convert snake_case to camelCase for frontend
+                "owner": result.get("owner", "")
             }
             projects.append(project)
             
@@ -154,7 +123,6 @@ def search():
             "error": "An error occurred while searching projects"
         }), 500
 
-
 def get_user_identity(client_principal):
     claims = client_principal.get('claims', [])
     # Try to find the email claim
@@ -185,13 +153,13 @@ def add_project():
         # Handle unauthenticated users or default to 'anonymous'
         user_identity = 'anonymous'
 
-    # Create the new project document with the actual owner
+    # Create the new project document with project_name and owner
     new_project = {
         "id": generate_document_id(data.get('githubUrl', '')),
+        "project_name": data.get('projectName', ''),  # Adding project_name
         "description": data.get('description', ''),
         "github_url": data.get('githubUrl', ''),
         "owner": user_identity,
-        # Add additional fields if necessary
     }
 
     # Generate embeddings for the description

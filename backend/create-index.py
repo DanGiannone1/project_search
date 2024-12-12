@@ -116,6 +116,7 @@ def create_index():
     fields = [
         SimpleField(name="id", type=SearchFieldDataType.String, key=True, filterable=True),
         SimpleField(name='owner', type=SearchFieldDataType.String, filterable=True),
+        SimpleField(name='project_name', type=SearchFieldDataType.String, filterable=True),
         SearchableField(name="description", type=SearchFieldDataType.String),
         SearchableField(name="github_url", type=SearchFieldDataType.String, filterable=True),
         SearchField(name="descriptionVector", type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
