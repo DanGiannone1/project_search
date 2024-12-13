@@ -1,9 +1,10 @@
 // App.tsx
-import ProjectSearch from './components/ProjectSearch'
+import ProjectSearch from './components/ProjectSearch/ProjectSearch'
 
 function App() {
   return (
-    <div className="w-screen h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 via-black to-gray-900 text-white">
+    // Removed the centering flex to allow full layout with sidebar
+    <div className="w-screen h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900 text-white">
       <ProjectSearch />
     </div>
   )

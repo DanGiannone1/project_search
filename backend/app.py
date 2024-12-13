@@ -69,7 +69,7 @@ def search_projects(query: str) -> List[Dict]:
         vector_query = VectorizedQuery(
             vector=query_vector,
             k_nearest_neighbors=3,
-            fields="descriptionVector"  # Make sure this matches your index field name
+            fields="descriptionVector" 
         )
         
         # Perform hybrid search (both text and vector)
@@ -77,7 +77,7 @@ def search_projects(query: str) -> List[Dict]:
             search_text=query,
             vector_queries=[vector_query],
             select=["id", "project_name", "description", "github_url", "owner"],
-            top=10
+            top=8
         )
         
         # Convert results to list of dictionaries
@@ -103,7 +103,15 @@ def search():
     try:
         data = request.get_json()
         query = data.get('query', '')
+        filters = data.get('filters', {})
+        sort = data.get('sort', '')
+
         print(f"Received search query: {query}")
+        print(f"Filters: {filters}")
+        print(f"Sort: {sort}")
+
+        # Here you can use the filters and sort parameter in your search logic
+        # For now, we just call the basic search.
         
         if not query.strip():
             return jsonify({"results": [], "message": "Please provide a search query"})
