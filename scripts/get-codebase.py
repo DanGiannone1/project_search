@@ -43,6 +43,19 @@ exclude_patterns = [
     '**/dist/**',
 ]
 
+header = """You are helping me develop my application. I will provide you my codebase and ask questions or request changes.  Here is my codebase:
+
+"""
+
+footer = """\n<end codebase> Before generating the code, give a brief summary of what you are planning to do, then generate.
+When generating the code, you don't always have to generate the full file, if its html then always give the full thing.
+Keep it concise and focus on the updated code. I just want the specific code changes, a brief explanation, and nothing else. 
+
+Please help me with the following: 
+
+
+"""
+
 # Collect files matching patterns
 files = []
 for pattern in patterns:
@@ -65,6 +78,9 @@ output_file = 'D:/temp/tmp_codebase/codebase.txt'
 
 # Open the output file in write mode
 with open(output_file, 'w', encoding='utf-8', errors='ignore') as f:
+    # Write the header
+    f.write(header)
+    
     # Iterate over all collected files
     for filepath in files:
         relative_path = os.path.relpath(filepath, base_dir)
@@ -76,3 +92,6 @@ with open(output_file, 'w', encoding='utf-8', errors='ignore') as f:
             f.write(code_file.read())
             # Add a separator between files
             f.write('\n' + '-'*80 + '\n')
+    
+    # Write the footer
+    f.write(footer)

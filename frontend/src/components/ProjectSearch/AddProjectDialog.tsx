@@ -1,99 +1,133 @@
-// AddProjectDialog.tsx
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+// frontend/src/components/ProjectSearch/AddProjectDialog.tsx
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Plus } from 'lucide-react';
-import { ProjectFormData } from './types';
+import { Plus } from 'lucide-react';
+import { Project } from './types';
+import { toCamelCase } from '@/lib/convertKeys';
+import { toast } from 'react-toastify';
+import AddProjectDialogInitial from './AddProjectDialogInitial';
+import AddProjectDialogReview from './AddProjectDialogReview';
 
-interface AddProjectDialogProps {
-  open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  uploadFormData: ProjectFormData;
-  setUploadFormData: React.Dispatch<React.SetStateAction<ProjectFormData>>;
-  handleSubmitProject: () => void;
-  isSubmittingProject: boolean;
-}
+const AddProjectDialog: React.FC = () => {
+    const [open, setOpen] = useState(false);
+    const [githubUrl, setGithubUrl] = useState('');
+    const [isSubmittingRepo, setIsSubmittingRepo] = useState(false);
+    const [extractedData, setExtractedData] = useState<Project | null>(null);
+    const [isSubmittingProject, setIsSubmittingProject] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-const AddProjectDialog: React.FC<AddProjectDialogProps> = ({
-  open,
-  setOpen,
-  uploadFormData,
-  setUploadFormData,
-  handleSubmitProject,
-  isSubmittingProject,
-}) => {
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="accentGradient" size="lg" className="h-12">
-          <Plus className="w-5 h-5 mr-2" />
-          Add Your Project
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md bg-neutral-900 border border-neutral-700">
-        <DialogHeader>
-          <DialogTitle className="text-white">Add New Project</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 mt-4">
-          <Input
-            placeholder="Project name..."
-            value={uploadFormData.projectName}
-            onChange={(e) =>
-              setUploadFormData({
-                ...uploadFormData,
-                projectName: e.target.value,
-              })
+    const handleSubmitRepo = async () => {
+        if (!githubUrl.trim()) return;
+        setIsSubmittingRepo(true);
+        setError(null);
+        try {
+            const response = await fetch('/api/submit_repo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ githubUrl }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to fetch repository data.');
             }
-            className="bg-neutral-800 border-neutral-700 text-white"
-          />
-          <Textarea
-            placeholder="Project description..."
-            value={uploadFormData.description}
-            onChange={(e) =>
-              setUploadFormData({
-                ...uploadFormData,
-                description: e.target.value,
-              })
+
+            const data = await response.json();
+            const camelData: Project = toCamelCase(data);
+
+            // Attach the githubUrl since the LLM doesn't return it
+            camelData.githubUrl = githubUrl;
+
+            setExtractedData(camelData);
+            // Removed the toast notification here
+            // toast.success('Repository data fetched successfully!');
+        } catch (err: any) {
+            console.error('Error submitting repository:', err);
+            setError(err.message || 'An unexpected error occurred.');
+            toast.error(err.message || 'An unexpected error occurred.');
+        } finally {
+            setIsSubmittingRepo(false);
+        }
+    };
+
+    const handleFinalSubmit = async () => {
+        if (!extractedData) return;
+        setIsSubmittingProject(true);
+        setError(null);
+        try {
+            // Changed route to /api/send_for_review
+            const response = await fetch('/api/send_for_review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(extractedData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to send for review.');
             }
-            className="bg-neutral-800 border-neutral-700 text-white"
-          />
-          <Input
-            placeholder="GitHub repository URL..."
-            value={uploadFormData.githubUrl}
-            onChange={(e) =>
-              setUploadFormData({
-                ...uploadFormData,
-                githubUrl: e.target.value,
-              })
-            }
-            className="bg-neutral-800 border-neutral-700 text-white"
-          />
-          <Button
-            className="w-full"
-            onClick={handleSubmitProject}
-            disabled={
-              !uploadFormData.description ||
-              !uploadFormData.githubUrl ||
-              !uploadFormData.projectName ||
-              isSubmittingProject
-            }
-            variant="accentGradient"
-          >
-            {isSubmittingProject ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Submitting...</span>
-              </div>
-            ) : (
-              <span>Submit Project</span>
-            )}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+
+            setOpen(false);
+            setGithubUrl('');
+            setExtractedData(null);
+            toast.success('Project sent for review successfully!');
+        } catch (err: any) {
+            console.error('Error sending for review:', err);
+            setError(err.message || 'An unexpected error occurred.');
+            toast.error(err.message || 'An unexpected error occurred.');
+        } finally {
+            setIsSubmittingProject(false);
+        }
+    };
+
+    const handleClose = () => {
+        setOpen(false);
+        setGithubUrl('');
+        setExtractedData(null);
+        setError(null);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <Button variant="accentGradient" size="lg" className="h-12" onClick={() => setOpen(true)}>
+                <Plus className="w-5 h-5 mr-2" />
+                Add Your Project
+            </Button>
+            <DialogContent
+                className={extractedData ? 
+                    "max-w-2xl w-full bg-neutral-900 border border-neutral-700 overflow-y-auto max-h-[90vh] p-6 rounded-lg" :
+                    "max-w-md w-full bg-neutral-900 border border-neutral-700 overflow-y-auto max-h-[80vh] p-6 rounded-lg"
+                }
+            >
+                <DialogHeader>
+                    <DialogTitle className="text-white text-lg font-bold">
+                        {extractedData ? 'Review & Edit Project Details' : 'Add New Project'}
+                    </DialogTitle>
+                </DialogHeader>
+
+                {!extractedData ? (
+                    <AddProjectDialogInitial
+                        githubUrl={githubUrl}
+                        setGithubUrl={setGithubUrl}
+                        isSubmittingRepo={isSubmittingRepo}
+                        handleSubmitRepo={handleSubmitRepo}
+                        handleClose={handleClose}
+                        error={error}
+                    />
+                ) : (
+                    <AddProjectDialogReview
+                        extractedData={extractedData}
+                        setExtractedData={setExtractedData}
+                        error={error}
+                        isSubmittingProject={isSubmittingProject}
+                        handleFinalSubmit={handleFinalSubmit}
+                        handleClose={handleClose}
+                    />
+                )}
+            </DialogContent>
+        </Dialog>
+    );
 };
 
 export default AddProjectDialog;

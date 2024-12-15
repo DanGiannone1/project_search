@@ -4,7 +4,7 @@ import { useState } from 'react';
 import FilterSidebar from './FilterSidebar';
 import SearchCard from './SearchCard';
 import ResultsDisplay from './ResultsDisplay';
-import { Project, ProjectFormData, Filters, SortOption } from './types';
+import { Project, Filters, SortOption } from './types';
 
 const sortOptions: SortOption[] = [
   { value: 'complexity_asc', label: 'Code Complexity: Low to High' },
@@ -17,13 +17,6 @@ function ProjectSearch() {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Project[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [uploadFormData, setUploadFormData] = useState<ProjectFormData>({
-    projectName: '',
-    description: '',
-    githubUrl: '',
-  });
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [isSubmittingProject, setIsSubmittingProject] = useState(false);
 
   // Filter states
   const [filters, setFilters] = useState<Filters>({
@@ -61,26 +54,6 @@ function ProjectSearch() {
     }
   };
 
-  const handleSubmitProject = async () => {
-    setIsSubmittingProject(true);
-    try {
-      const response = await fetch('/api/add_project', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(uploadFormData),
-      });
-
-      if (response.ok) {
-        setUploadFormData({ projectName: '', description: '', githubUrl: '' });
-        setDialogOpen(false);
-      }
-    } catch (error) {
-      console.error('Error adding project:', error);
-    } finally {
-      setIsSubmittingProject(false);
-    }
-  };
-
   return (
     <div className="w-screen h-screen flex bg-gradient-to-b from-gray-900 via-black to-gray-900 text-white overflow-hidden">
       {/* Left Filter/Sort Pane */}
@@ -109,12 +82,6 @@ function ProjectSearch() {
           setSearchQuery={setSearchQuery}
           handleSearch={handleSearch}
           isSearching={isSearching}
-          dialogOpen={dialogOpen}
-          setDialogOpen={setDialogOpen}
-          uploadFormData={uploadFormData}
-          setUploadFormData={setUploadFormData}
-          handleSubmitProject={handleSubmitProject}
-          isSubmittingProject={isSubmittingProject}
         />
 
         {/* Results Display */}

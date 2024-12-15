@@ -5,19 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Search, Loader2 } from 'lucide-react';
 import AddProjectDialog from './AddProjectDialog';
-import { ProjectFormData } from './types';
 
 interface SearchCardProps {
   searchQuery: string;
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
   handleSearch: () => void;
   isSearching: boolean;
-  dialogOpen: boolean;
-  setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  uploadFormData: ProjectFormData;
-  setUploadFormData: React.Dispatch<React.SetStateAction<ProjectFormData>>;
-  handleSubmitProject: () => void;
-  isSubmittingProject: boolean;
 }
 
 const SearchCard: React.FC<SearchCardProps> = ({
@@ -25,12 +18,6 @@ const SearchCard: React.FC<SearchCardProps> = ({
   setSearchQuery,
   handleSearch,
   isSearching,
-  dialogOpen,
-  setDialogOpen,
-  uploadFormData,
-  setUploadFormData,
-  handleSubmitProject,
-  isSubmittingProject,
 }) => {
   return (
     <div className="max-w-4xl mx-auto">
@@ -51,14 +38,7 @@ const SearchCard: React.FC<SearchCardProps> = ({
           <div className="relative flex items-center h-12 mt-4">
             {/* Center Add Your Project Button */}
             <div className="mx-auto">
-              <AddProjectDialog
-                open={dialogOpen}
-                setOpen={setDialogOpen}
-                uploadFormData={uploadFormData}
-                setUploadFormData={setUploadFormData}
-                handleSubmitProject={handleSubmitProject}
-                isSubmittingProject={isSubmittingProject}
-              />
+              <AddProjectDialog />
             </div>
 
             {/* Search button smaller and on the bottom-right */}

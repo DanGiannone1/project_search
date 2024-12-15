@@ -96,111 +96,54 @@ def generate_embeddings(text, model="text-embedding-ada-002"): # model = "deploy
 
 
 def create_index():
-
-   
-
-    
-    #Check if index exists, return if so
+    # Check if index exists, return if so
     try:
-        # Try to get the index
         search_index_client.get_index(ai_search_index)
-        # If no exception is raised, the index exists and we return
         print("Index already exists")
         return
     except:
-        # If an exception is raised, the index does not exist and we continue with the logic to create it
         pass
-
-    # Rest of your code...
 
     fields = [
         SimpleField(name="id", type=SearchFieldDataType.String, key=True, filterable=True),
         SimpleField(name='owner', type=SearchFieldDataType.String, filterable=True),
         SimpleField(name='project_name', type=SearchFieldDataType.String, filterable=True),
-        SearchableField(name="description", type=SearchFieldDataType.String),
+        SearchableField(name="project_description", type=SearchFieldDataType.String),
         SearchableField(name="github_url", type=SearchFieldDataType.String, filterable=True),
-        SearchField(name="descriptionVector", type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
-                    searchable=True, vector_search_dimensions=1536, vector_search_profile_name="myHnswProfile")
-
+        SimpleField(name="code_complexity_score", type=SearchFieldDataType.String, filterable=True),
+        SimpleField(name="programming_languages", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
+        SimpleField(name="frameworks", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
+        SimpleField(name="azure_services", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
+        SimpleField(name="design_patterns", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
+        SimpleField(name="project_type", type=SearchFieldDataType.String, filterable=True),
+        SearchField(
+            name="descriptionVector",
+            type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+            searchable=True,
+            vector_search_dimensions=1536,
+            vector_search_profile_name="myHnswProfile"
+        ),
+        SimpleField(name="business_value", type=SearchFieldDataType.String),
+        SimpleField(name="target_audience", type=SearchFieldDataType.String)
     ]
 
     vector_search = VectorSearch(
-    algorithms=[
-        HnswAlgorithmConfiguration(
-            name="myHnsw"
-        )
-    ],
-    profiles=[
-        VectorSearchProfile(
-            name="myHnswProfile",
-            algorithm_configuration_name="myHnsw",
-        )
-    ]
-)
-    index = SearchIndex(name=ai_search_index, fields=fields,
-                    vector_search=vector_search)
+        algorithms=[
+            HnswAlgorithmConfiguration(
+                name="myHnsw"
+            )
+        ],
+        profiles=[
+            VectorSearchProfile(
+                name="myHnswProfile",
+                algorithm_configuration_name="myHnsw",
+            )
+        ]
+    )
+    index = SearchIndex(name=ai_search_index, fields=fields, vector_search=vector_search)
     result = search_index_client.create_or_update_index(index)
 
     print("Index has been created")
 
-
-
-def generate_document_id(github_url: str) -> str:
-    """Generate a unique, deterministic ID for a document."""
-    unique_string = f"{github_url}"  # Use first 100 characters of content for uniqueness
-    return hashlib.md5(unique_string.encode()).hexdigest()
-
-
-
-# def populate_index():
-#     
-            
-#             experienceLevel = extraction_json["experienceLevel"]
-#             jobTitle = extraction_json["jobTitle"]
-#             skills_and_experience = extraction_json["skills_and_experience"]
-#             skills_and_experience_str = ", ".join(skills_and_experience)
-#             searchVector = generate_embeddings(skills_and_experience_str)
-#             current_date = datetime.now(timezone.utc).isoformat()
-#             document_id = generate_document_id(blob.name)
-#             fileName = os.path.basename(blob.name)
-#             print(f"Extracted experience level: {experienceLevel}")
-#             print(f"Extracted job title: {jobTitle}")
-#             print(f"Extracted skills and experience: {skills_and_experience_str}")
-#             print(f"Current date: {current_date}")
-            
-#             document = {
-#                 "id": document_id,
-#                 "date": current_date,
-#                 "jobTitle": jobTitle,
-#                 "experienceLevel": experienceLevel,
-#                 "content": full_text,
-#                 "sourceFileName": fileName,
-#                 "searchVector": searchVector
-#             }
-            
-#             search_client.upload_documents(documents=[document])
-            
-#             # Move the processed file to the 'processed' folder
-
-#             print(f"Successfully processed and moved {blob.name}")
-        
-#         except Exception as e:
-#             print(f"Error processing {blob.name}: {str(e)}")
-
-
 if __name__ == "__main__":
-
-
-
     create_index()
-
-
-
-    
-
-    
-    
-
-
-    
-
