@@ -11,7 +11,7 @@ export interface Project {
   azureServices?: string[];
   designPatterns?: string[];
   projectType?: string;
-  codeComplexityScore?: 'Beginner' | 'Intermediate' | 'Advanced';
+  codeComplexity?: 'Beginner' | 'Intermediate' | 'Advanced';
   businessValue?: string;
   targetAudience?: string;
   approved?: boolean;

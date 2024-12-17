@@ -88,9 +88,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
                         )}
                         
                         {/* Code Complexity */}
-                        {result.codeComplexityScore && (
+                        {result.codeComplexity && (
                             <div className="mt-2">
-                                <span className="font-semibold text-teal-500">Code Complexity:</span> {result.codeComplexityScore}
+                                <span className="font-semibold text-teal-500">Code Complexity:</span> {result.codeComplexity}
                             </div>
                         )}
                         

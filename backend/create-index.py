@@ -58,41 +58,6 @@ aoai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
 search_index_client = SearchIndexClient(ai_search_endpoint, AzureKeyCredential(ai_search_key))
 search_client = SearchClient(ai_search_endpoint, ai_search_index, AzureKeyCredential(ai_search_key))
 
-aoai_client = AzureOpenAI(
-        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"), 
-        api_key=os.getenv("AZURE_OPENAI_KEY"),  
-        api_version="2023-05-15"
-        )
-
-
-
-primary_llm = AzureChatOpenAI(
-    azure_deployment=aoai_deployment,
-    api_version="2024-05-01-preview",
-    temperature=0,
-    max_tokens=None,
-    timeout=None,
-    max_retries=2,
-    api_key=aoai_key,
-    azure_endpoint=aoai_endpoint
-)
-
-primary_llm_json = AzureChatOpenAI(
-    azure_deployment=aoai_deployment,
-    api_version="2024-05-01-preview",
-    temperature=0,
-    max_tokens=None,
-    timeout=None,
-    max_retries=2,
-    api_key=aoai_key,
-    azure_endpoint=aoai_endpoint,
-    model_kwargs={"response_format": {"type": "json_object"}}
-)
-
-
-def generate_embeddings(text, model="text-embedding-ada-002"): # model = "deployment_name"
-    return aoai_client.embeddings.create(input = [text], model=model).data[0].embedding
-
 
 
 def create_index():
@@ -105,26 +70,40 @@ def create_index():
         pass
 
     fields = [
-        SimpleField(name="id", type=SearchFieldDataType.String, key=True, filterable=True),
+        SimpleField(name="id", type=SearchFieldDataType.String, key=True),
         SimpleField(name='owner', type=SearchFieldDataType.String, filterable=True),
-        SimpleField(name='project_name', type=SearchFieldDataType.String, filterable=True),
+        SearchableField(name='project_name', type=SearchFieldDataType.String),
         SearchableField(name="project_description", type=SearchFieldDataType.String),
-        SearchableField(name="github_url", type=SearchFieldDataType.String, filterable=True),
-        SimpleField(name="code_complexity_score", type=SearchFieldDataType.String, filterable=True),
+        SimpleField(name="github_url", type=SearchFieldDataType.String, filterable=True),
+        SimpleField(name="code_complexity", type=SearchFieldDataType.String, filterable=True),
         SimpleField(name="programming_languages", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
         SimpleField(name="frameworks", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
         SimpleField(name="azure_services", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
         SimpleField(name="design_patterns", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
         SimpleField(name="project_type", type=SearchFieldDataType.String, filterable=True),
+        SearchableField(name="business_value", type=SearchFieldDataType.String),
+        SearchableField(name="target_audience", type=SearchFieldDataType.String),
         SearchField(
-            name="descriptionVector",
+            name="description_vector",
             type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
             searchable=True,
             vector_search_dimensions=1536,
             vector_search_profile_name="myHnswProfile"
         ),
-        SimpleField(name="business_value", type=SearchFieldDataType.String),
-        SimpleField(name="target_audience", type=SearchFieldDataType.String)
+        SearchField(
+            name="business_value_vector",
+            type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+            searchable=True,
+            vector_search_dimensions=1536,
+            vector_search_profile_name="myHnswProfile"
+        ),
+        SearchField(
+            name="target_audience_vector",
+            type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+            searchable=True,
+            vector_search_dimensions=1536,
+            vector_search_profile_name="myHnswProfile"
+        ),
     ]
 
     vector_search = VectorSearch(
@@ -140,6 +119,7 @@ def create_index():
             )
         ]
     )
+
     index = SearchIndex(name=ai_search_index, fields=fields, vector_search=vector_search)
     result = search_index_client.create_or_update_index(index)
 

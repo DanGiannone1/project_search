@@ -1,8 +1,8 @@
 // frontend/src/components/ProjectSearch/AddProjectDialog.tsx
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import { Project } from './types';
 import { toCamelCase } from '@/lib/convertKeys';
 import { toast } from 'react-toastify';
@@ -40,8 +40,6 @@ const AddProjectDialog: React.FC = () => {
             camelData.githubUrl = githubUrl;
 
             setExtractedData(camelData);
-            // Removed the toast notification here
-            // toast.success('Repository data fetched successfully!');
         } catch (err: any) {
             console.error('Error submitting repository:', err);
             setError(err.message || 'An unexpected error occurred.');
@@ -56,7 +54,6 @@ const AddProjectDialog: React.FC = () => {
         setIsSubmittingProject(true);
         setError(null);
         try {
-            // Changed route to /api/send_for_review
             const response = await fetch('/api/send_for_review', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -89,11 +86,15 @@ const AddProjectDialog: React.FC = () => {
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <Button variant="accentGradient" size="lg" className="h-12" onClick={() => setOpen(true)}>
-                <Plus className="w-5 h-5 mr-2" />
-                Add Your Project
-            </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+          <Button 
+            onClick={() => setOpen(true)} // Add this line
+            variant="secondary" 
+            size="sm"
+            className="h-9 px-4 whitespace-nowrap"
+          >
+            + Add Your Project
+          </Button>
             <DialogContent
                 className={extractedData ? 
                     "max-w-2xl w-full bg-neutral-900 border border-neutral-700 overflow-y-auto max-h-[90vh] p-6 rounded-lg" :

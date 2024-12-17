@@ -50,7 +50,15 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
           disabled
         />
       </div>
-
+    {/* Owner */}
+    <div>
+        <label className="block text-sm font-semibold mb-1 text-teal-500">Owner</label>
+        <Input
+            value={extractedData.owner || 'anonymous'}
+            className="bg-neutral-800 border-neutral-700 text-white h-12"
+            disabled
+        />
+    </div>
       {/* Project Name */}
       <div>
         <label className="block text-sm font-semibold mb-1 text-teal-500">Project Name</label>
@@ -170,11 +178,11 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
           {complexityOptions.map((option) => (
             <Button
               key={option}
-              variant={extractedData.codeComplexityScore === option ? 'accentGradient' : 'secondary'}
+              variant={extractedData.codeComplexity === option ? 'accentGradient' : 'secondary'}
               onClick={() =>
                 setExtractedData({
                   ...extractedData,
-                  codeComplexityScore: option as 'Beginner' | 'Intermediate' | 'Advanced',
+                  codeComplexity: option as 'Beginner' | 'Intermediate' | 'Advanced',
                 })
               }
               className="flex-1"

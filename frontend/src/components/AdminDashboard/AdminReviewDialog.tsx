@@ -66,6 +66,15 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             disabled
                         />
                     </div>
+                    {/* Owner */}
+                    <div>
+                        <label className="block text-sm font-semibold mb-1 text-teal-500">Owner</label>
+                        <Input
+                            value={project.owner || 'anonymous'}
+                            className="bg-neutral-800 border-neutral-700 text-white h-12"
+                            disabled
+                        />
+                    </div>
 
                     {/* Project Name */}
                     <div>
@@ -186,11 +195,11 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             {['Beginner', 'Intermediate', 'Advanced'].map((option) => (
                                 <Button
                                     key={option}
-                                    variant={editedProject.codeComplexityScore === option ? 'accentGradient' : 'secondary'}
+                                    variant={editedProject.codeComplexity === option ? 'accentGradient' : 'secondary'}
                                     onClick={() =>
                                         setEditedProject({
                                             ...editedProject,
-                                            codeComplexityScore: option as 'Beginner' | 'Intermediate' | 'Advanced',
+                                            codeComplexity: option as 'Beginner' | 'Intermediate' | 'Advanced',
                                         })
                                     }
                                     className="flex-1"

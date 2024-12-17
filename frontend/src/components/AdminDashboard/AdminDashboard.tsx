@@ -123,15 +123,20 @@ const AdminDashboard: React.FC = () => {
                                         {project.projectName || 'No Name Provided'}
                                     </CardTitle>
                                     <div className="flex items-center justify-between mt-2">
-                                        <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 text-teal-500 hover:underline">
-                                            <Github className="w-5 h-5" />
-                                            <span>{project.githubUrl}</span>
+                                    <a
+                                        href={project.githubUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center space-x-2 text-blue-500 hover:underline"
+                                        >
+                                        <Github className="w-5 h-5" />
+                                        <span>{project.githubUrl}</span>
                                         </a>
                                     </div>
                                     <div className="mt-4">
                                         <Button
                                             onClick={() => openReviewDialog(project)}
-                                            className="bg-green-600 hover:bg-green-500 focus-visible:ring-green-400"
+                                            variant="accentGradient"
                                             disabled={actionLoading === project.id}
                                         >
                                             Review

@@ -44,7 +44,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   };
 
   return (
-    <div className="w-64 bg-neutral-900 border-r border-neutral-800 p-4 overflow-y-auto">
+    <div className="w-64 h-full bg-neutral-900 border-r border-neutral-800 p-4 overflow-y-auto">
       <h2 className="text-lg font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-cyan-500 mb-4">
         Filters & Sort
       </h2>

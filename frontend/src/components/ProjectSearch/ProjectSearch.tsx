@@ -55,37 +55,41 @@ function ProjectSearch() {
   };
 
   return (
-    <div className="w-screen h-screen flex bg-gradient-to-b from-gray-900 via-black to-gray-900 text-white overflow-hidden">
-      {/* Left Filter/Sort Pane */}
-      <FilterSidebar
-        filters={filters}
-        setFilters={setFilters}
-        sortOptions={sortOptions}
-        selectedSort={selectedSort}
-        setSelectedSort={setSelectedSort}
-      />
+    <div className="w-screen h-screen flex bg-transparent text-white overflow-hidden">
+      {/* Left Filter/Sort Pane - Added h-screen */}
+      <div className="h-screen flex-shrink-0">
+        <FilterSidebar
+          filters={filters}
+          setFilters={setFilters}
+          sortOptions={sortOptions}
+          selectedSort={selectedSort}
+          setSelectedSort={setSelectedSort}
+        />
+      </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-8">
-        <div className="text-center space-y-4 py-12">
-          <h1 className="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-cyan-500">
-            Project Search
-          </h1>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Discover similar projects using natural language search powered by AI
-          </p>
+      <div className="flex-1 overflow-y-auto pt-16"> {/* Added pt-16 to account for buttons */}
+        <div className="px-6 py-8">
+          <div className="text-center space-y-4 mb-8">
+            <h1 className="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-cyan-500">
+              Project Search
+            </h1>
+            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+              Discover similar projects using natural language search powered by AI
+            </p>
+          </div>
+
+          {/* Search Card */}
+          <SearchCard
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            handleSearch={handleSearch}
+            isSearching={isSearching}
+          />
+
+          {/* Results Display */}
+          {results.length > 0 && <ResultsDisplay results={results} />}
         </div>
-
-        {/* Search Card */}
-        <SearchCard
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          handleSearch={handleSearch}
-          isSearching={isSearching}
-        />
-
-        {/* Results Display */}
-        {results.length > 0 && <ResultsDisplay results={results} />}
       </div>
     </div>
   );
