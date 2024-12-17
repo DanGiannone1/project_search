@@ -15,8 +15,6 @@ import json
 import requests
 from pydantic import BaseModel
 from langchain_openai import AzureChatOpenAI
-from pydantic import BaseModel
-from typing import List, Dict, Literal
 from azure.communication.email import EmailClient
 from projects import search_projects, add_project
 
