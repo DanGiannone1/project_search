@@ -43,15 +43,11 @@ exclude_patterns = [
     '**/dist/**',
 ]
 
-header = """You are helping me develop my application. I will provide you my codebase and ask questions or request changes.  Here is my codebase:
+header = """Here is my codebase:
 
 """
 
-footer = """\n<end codebase> Before generating the code, give a brief summary of what you are planning to do, then generate.
-When generating the code, you don't always have to generate the full file, if its html then always give the full thing.
-Keep it concise and focus on the updated code. I just want the specific code changes, a brief explanation, and nothing else. 
-
-Please help me with the following: 
+footer = """\n<end codebase> 
 
 
 """

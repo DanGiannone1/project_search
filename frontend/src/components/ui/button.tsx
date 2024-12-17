@@ -18,7 +18,7 @@ const buttonVariants = cva(
         darkBlue: "bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-xl hover:bg-blue-800 focus-visible:ring-blue-700",
 
         // New accent gradient variant:
-        accentGradient: "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-lg hover:from-teal-400 hover:to-cyan-400 focus-visible:ring-cyan-400"
+        accentGradient: "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg hover:from-indigo-500 hover:to-violet-500 focus-visible:ring-violet-400"
       },
       size: {
         default: "h-9 px-4 py-2",

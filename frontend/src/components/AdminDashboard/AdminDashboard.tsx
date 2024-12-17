@@ -1,5 +1,4 @@
 // frontend/src/components/AdminDashboard/AdminDashboard.tsx
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Loader2, Github } from 'lucide-react';
 import { Project } from '@/components/ProjectSearch/types';
 import { toast } from 'react-toastify';
 import { toCamelCase } from '@/lib/convertKeys';
-import AdminReviewDialog from './AdminReviewDialog'; // Import the new dialog
+import AdminReviewDialog from './AdminReviewDialog';
 
 const AdminDashboard: React.FC = () => {
     const [pendingReviews, setPendingReviews] = useState<Project[]>([]);
@@ -35,7 +34,6 @@ const AdminDashboard: React.FC = () => {
             const data = await response.json();
             const camelData: Project[] = toCamelCase(data.pendingReviews);
             setPendingReviews(camelData);
-            console.log('Fetched pending reviews:', camelData);
         } catch (error: any) {
             console.error(error);
             toast.error(error.message || 'An error occurred while fetching reviews.');
@@ -60,7 +58,7 @@ const AdminDashboard: React.FC = () => {
             const response = await fetch('/api/admin/approve_project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedProject), // Removed explicit 'id'
+                body: JSON.stringify(updatedProject),
             });
 
             if (!response.ok) {
@@ -105,10 +103,10 @@ const AdminDashboard: React.FC = () => {
 
     return (
         <div className="p-6 bg-neutral-900 min-h-screen">
-            <h1 className="text-2xl font-bold text-teal-500 mb-6">Admin Dashboard - Pending Reviews</h1>
+            <h1 className="text-2xl font-bold text-indigo-400 mb-6">Admin Dashboard - Pending Reviews</h1>
             {loading ? (
                 <div className="flex justify-center items-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
+                    <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-6">
@@ -118,19 +116,18 @@ const AdminDashboard: React.FC = () => {
                         pendingReviews.map(project => (
                             <Card key={project.id} className="bg-neutral-800 border-neutral-700">
                                 <CardContent>
-                                    {/* Use CardTitle for Project Name */}
                                     <CardTitle className="text-white font-semibold text-lg">
                                         {project.projectName || 'No Name Provided'}
                                     </CardTitle>
                                     <div className="flex items-center justify-between mt-2">
-                                    <a
-                                        href={project.githubUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center space-x-2 text-blue-500 hover:underline"
+                                        <a
+                                            href={project.githubUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center space-x-2 text-indigo-400 hover:underline"
                                         >
-                                        <Github className="w-5 h-5" />
-                                        <span>{project.githubUrl}</span>
+                                            <Github className="w-5 h-5" />
+                                            <span>{project.githubUrl}</span>
                                         </a>
                                     </div>
                                     <div className="mt-4">
@@ -149,7 +146,6 @@ const AdminDashboard: React.FC = () => {
                 </div>
             )}
 
-            {/* Admin Review Dialog */}
             {selectedProject && (
                 <AdminReviewDialog
                     isOpen={isDialogOpen}

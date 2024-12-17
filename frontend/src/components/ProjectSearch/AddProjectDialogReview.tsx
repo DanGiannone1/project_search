@@ -4,14 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-// Removed Select imports
-// import {
-//   Select,
-//   SelectTrigger,
-//   SelectValue,
-//   SelectContent,
-//   SelectItem,
-// } from '@/components/ui/select';
 import { Project } from './types';
 
 interface AddProjectDialogReviewProps {
@@ -37,7 +29,7 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
     <div className="space-y-4 mt-4">
       {/* GitHub URL */}
       <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">GitHub URL</label>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">GitHub URL</label>
         <Input
           value={extractedData.githubUrl || ''}
           onChange={(e) =>
@@ -50,18 +42,20 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
           disabled
         />
       </div>
-    {/* Owner */}
-    <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">Owner</label>
+
+      {/* Owner */}
+      <div>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Owner</label>
         <Input
-            value={extractedData.owner || 'anonymous'}
-            className="bg-neutral-800 border-neutral-700 text-white h-12"
-            disabled
+          value={extractedData.owner || 'anonymous'}
+          className="bg-neutral-800 border-neutral-700 text-white h-12"
+          disabled
         />
-    </div>
+      </div>
+
       {/* Project Name */}
       <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">Project Name</label>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Name</label>
         <Input
           placeholder="Project Name"
           value={extractedData.projectName || ''}
@@ -77,7 +71,7 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
 
       {/* Project Description */}
       <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">Project Description</label>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Description</label>
         <Textarea
           placeholder="Project Description"
           value={extractedData.projectDescription}
@@ -93,7 +87,7 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
 
       {/* Programming Languages */}
       <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">Programming Languages (comma separated)</label>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Programming Languages (comma separated)</label>
         <Input
           placeholder="Programming Languages"
           value={extractedData.programmingLanguages?.join(', ') || ''}
@@ -109,7 +103,7 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
 
       {/* Frameworks */}
       <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">Frameworks (comma separated)</label>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Frameworks (comma separated)</label>
         <Input
           placeholder="Frameworks"
           value={extractedData.frameworks?.join(', ') || ''}
@@ -125,7 +119,7 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
 
       {/* Azure Services */}
       <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">Azure Services (comma separated)</label>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Azure Services (comma separated)</label>
         <Input
           placeholder="Azure Services"
           value={extractedData.azureServices?.join(', ') || ''}
@@ -141,7 +135,7 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
 
       {/* Design Patterns */}
       <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">Design Patterns (comma separated)</label>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Design Patterns (comma separated)</label>
         <Input
           placeholder="Design Patterns"
           value={extractedData.designPatterns?.join(', ') || ''}
@@ -157,7 +151,7 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
 
       {/* Project Type */}
       <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">Project Type</label>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Type</label>
         <Input
           placeholder="Project Type"
           value={extractedData.projectType || ''}
@@ -173,7 +167,7 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
 
       {/* Code Complexity */}
       <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">Code Complexity</label>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Code Complexity</label>
         <div className="flex space-x-2">
           {complexityOptions.map((option) => (
             <Button
@@ -195,7 +189,7 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
 
       {/* Business Value */}
       <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">Business Value</label>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Business Value</label>
         <Textarea
           placeholder="Business Value"
           value={extractedData.businessValue}
@@ -211,7 +205,7 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
 
       {/* Target Audience */}
       <div>
-        <label className="block text-sm font-semibold mb-1 text-teal-500">Target Audience</label>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Target Audience</label>
         <Textarea
           placeholder="Target Audience"
           value={extractedData.targetAudience}

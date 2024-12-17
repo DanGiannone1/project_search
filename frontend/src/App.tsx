@@ -7,7 +7,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Button } from './components/ui/button';
 import { User, Shield } from 'lucide-react';
-import AddProjectDialog from './components/ProjectSearch/AddProjectDialog'; // Ensure this import is correct
+import AddProjectDialog from './components/ProjectSearch/AddProjectDialog';
 
 function App() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -17,12 +17,12 @@ function App() {
   };
 
   return (
-    <div className="w-screen min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900 text-white">
+    <div className="w-screen min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
       <div className="absolute top-4 right-4 flex gap-2 z-10">
-        <AddProjectDialog /> {/* Ensure this component is placed correctly */}
+        <AddProjectDialog />
         <Button 
           onClick={toggleView} 
-          variant="accentGradient" 
+          variant="secondary" 
           size="sm"
           className="h-9 px-4 whitespace-nowrap"
         >

@@ -1,5 +1,4 @@
 // frontend/src/components/AdminDashboard/AdminReviewDialog.tsx
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,6 @@ import { Loader2 } from 'lucide-react';
 import { Project } from '@/components/ProjectSearch/types';
 import { Textarea} from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-
 
 interface AdminReviewDialogProps {
     isOpen: boolean;
@@ -51,9 +49,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                 </DialogHeader>
 
                 <div className="space-y-4 mt-4">
-                    {/* GitHub URL */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">GitHub URL</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">GitHub URL</label>
                         <Input
                             value={editedProject.githubUrl || ''}
                             onChange={(e) =>
@@ -66,19 +63,16 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             disabled
                         />
                     </div>
-                    {/* Owner */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">Owner</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Owner</label>
                         <Input
                             value={project.owner || 'anonymous'}
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
                             disabled
                         />
                     </div>
-
-                    {/* Project Name */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">Project Name</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Name</label>
                         <Input
                             placeholder="Project Name"
                             value={editedProject.projectName || ''}
@@ -91,10 +85,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
                         />
                     </div>
-
-                    {/* Project Description */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">Project Description</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Description</label>
                         <Textarea
                             placeholder="Project Description"
                             value={editedProject.projectDescription}
@@ -107,10 +99,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-32"
                         />
                     </div>
-
-                    {/* Programming Languages */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">Programming Languages (comma separated)</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Programming Languages (comma separated)</label>
                         <Input
                             placeholder="Programming Languages"
                             value={editedProject.programmingLanguages?.join(', ') || ''}
@@ -123,10 +113,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
                         />
                     </div>
-
-                    {/* Frameworks */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">Frameworks (comma separated)</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Frameworks (comma separated)</label>
                         <Input
                             placeholder="Frameworks"
                             value={editedProject.frameworks?.join(', ') || ''}
@@ -139,10 +127,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
                         />
                     </div>
-
-                    {/* Azure Services */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">Azure Services (comma separated)</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Azure Services (comma separated)</label>
                         <Input
                             placeholder="Azure Services"
                             value={editedProject.azureServices?.join(', ') || ''}
@@ -155,10 +141,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
                         />
                     </div>
-
-                    {/* Design Patterns */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">Design Patterns (comma separated)</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Design Patterns (comma separated)</label>
                         <Input
                             placeholder="Design Patterns"
                             value={editedProject.designPatterns?.join(', ') || ''}
@@ -171,10 +155,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
                         />
                     </div>
-
-                    {/* Project Type */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">Project Type</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Type</label>
                         <Input
                             placeholder="Project Type"
                             value={editedProject.projectType || ''}
@@ -187,10 +169,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
                         />
                     </div>
-
-                    {/* Code Complexity */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">Code Complexity</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Code Complexity</label>
                         <div className="flex space-x-2">
                             {['Beginner', 'Intermediate', 'Advanced'].map((option) => (
                                 <Button
@@ -209,10 +189,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             ))}
                         </div>
                     </div>
-
-                    {/* Business Value */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">Business Value</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Business Value</label>
                         <Textarea
                             placeholder="Business Value"
                             value={editedProject.businessValue}
@@ -225,10 +203,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-32"
                         />
                     </div>
-
-                    {/* Target Audience */}
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-teal-500">Target Audience</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Target Audience</label>
                         <Textarea
                             placeholder="Target Audience"
                             value={editedProject.targetAudience}
@@ -242,7 +218,6 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                         />
                     </div>
 
-                    {/* Submit and Reject Buttons */}
                     <div className="flex space-x-2 mt-4">
                         <Button
                             onClick={handleApprove}
@@ -272,7 +247,7 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             'Reject'
                             )}
                         </Button>
-                        </div>
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
