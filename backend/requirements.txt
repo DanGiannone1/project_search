@@ -11,3 +11,6 @@ gunicorn
 flask-limiter
 azure-search-documents==11.4.0
 azure-communication-email
+azure-monitor-opentelemetry-exporter
+opentelemetry-sdk
+opentelemetry-instrumentation-flask

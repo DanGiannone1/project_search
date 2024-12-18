@@ -1,14 +1,9 @@
 # backend/app.py
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import time
-from typing import List, Dict, Literal
+from typing import List, Literal
 import os
 import hashlib
-from azure.search.documents import SearchClient
-from azure.core.credentials import AzureKeyCredential
-from azure.search.documents.models import VectorizedQuery
-from openai import AzureOpenAI
 from dotenv import load_dotenv
 import base64
 import json
@@ -19,19 +14,41 @@ from azure.communication.email import EmailClient
 from projects import search_projects, add_project
 from cosmosdb import CosmosDBManager
 
+import logging
+from applicationinsights.flask.ext import AppInsights
+
+
+
 # Initialize EmailClient
 acs_conn_str = os.getenv("COMMUNICATION_SERVICES_CONNECTION_STRING")
 email_client = EmailClient.from_connection_string(acs_conn_str)
 
-cosmos_db = CosmosDBManager(cosmos_database_id=os.environ.get("COSMOS_DATABASE_ID"),
-                            cosmos_container_id=os.environ.get("COSMOS_CONTAINER_ID"))
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+
+try:
+    logger.info("Initializing CosmosDB connection...")
+    cosmos_db = CosmosDBManager(
+        cosmos_database_id=os.environ.get("COSMOS_DATABASE_ID"),
+        cosmos_container_id=os.environ.get("COSMOS_CONTAINER_ID")
+    )
+    logger.info("CosmosDB connection initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize CosmosDB connection: {str(e)}")
 
 app = Flask(__name__, static_folder='dist', static_url_path='')
 CORS(app)  # Enable CORS
 
 # Load environment variables from .env file
 load_dotenv()
+
+APPINSIGHTS_INSTRUMENTATION_KEY = os.getenv("APPINSIGHTS_INSTRUMENTATION_KEY")
+
+app.config['APPINSIGHTS_INSTRUMENTATIONKEY'] = APPINSIGHTS_INSTRUMENTATION_KEY
+appinsights = AppInsights(app)
 
 
 # Azure OpenAI configuration
@@ -331,6 +348,7 @@ def get_pending_reviews():
 def get_filter_options():
     try:
         # Query only approved projects
+        logger.info("fetching_filter_options")
         query = "SELECT * FROM c WHERE c.review_status = 'approved'"
         projects = cosmos_db.query_items(query)
 
@@ -370,6 +388,10 @@ def get_filter_options():
 
     except Exception as e:
         print(f"Error in get_filter_options: {e}")
+        logger.error("get_filter_options_failed",
+            error=str(e),
+            error_type=type(e).__name__
+        )
         return jsonify({"error": str(e)}), 500
 
 # Update /api/admin/approve_project endpoint
@@ -409,10 +431,13 @@ def reject_project():
 @app.route('/api/search_projects', methods=['POST'])
 def search():
     try:
+
         data = request.get_json()
         query = data.get('query', '')
         filters = data.get('filters', {})
         sort = data.get('sort', '')
+
+        logger.info(f"Search started - Query: {data.get('query')}, Filters: {data.get('filters')}, Sort: {data.get('sort')}")
 
         print(f"Received search query: {query}")
         print(f"Filters: {filters}")
@@ -423,6 +448,7 @@ def search():
 
         results = search_projects(query, filters, sort)
         print(f"Found {len(results)} results")
+        logger.info(f"Search completed - Found {len(results)} results for query: {query}")
 
         return jsonify({
             "results": results,
@@ -430,7 +456,7 @@ def search():
         })
 
     except Exception as e:
-        print(f"Search endpoint error: {str(e)}")
+        logger.error(f"Search failed - Error: {str(e)}, Input: {data}")
         return jsonify({
             "results": [],
             "error": "An error occurred while searching projects"
@@ -495,6 +521,8 @@ def send_for_review():
             return jsonify({"error": str(e)}), 500
     else:
         return jsonify({"error": "Failed to send review request."}), 500
+
+
 
 
 if __name__ == '__main__':
