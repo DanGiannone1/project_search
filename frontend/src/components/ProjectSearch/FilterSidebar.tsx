@@ -1,5 +1,4 @@
 // frontend/src/components/ProjectSearch/FilterSidebar.tsx
-
 import React from 'react';
 import { Filters, SortOption } from './types';
 
@@ -9,6 +8,15 @@ interface FilterSidebarProps {
   sortOptions: SortOption[];
   selectedSort: string;
   setSelectedSort: React.Dispatch<React.SetStateAction<string>>;
+  availableOptions: {
+    programmingLanguages: string[];
+    frameworks: string[];
+    azureServices: string[];
+    designPatterns: string[];
+    industries: string[];
+    projectTypes: string[];
+    codeComplexities: string[]; // NEW
+  };
 }
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({
@@ -17,20 +25,61 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   sortOptions,
   selectedSort,
   setSelectedSort,
+  availableOptions
 }) => {
-  const programmingLanguages = ['python', 'C#'];
-  const frameworks = ['semantic kernel', 'langchain', 'langgraph', 'autogen'];
-  const azureServices = ['cosmosDB', 'document intelligence', 'azure openai', 'AI Search'];
-  const designPatterns = ['RAG', 'single agent', 'multi-agent'];
-  const industries = ['professional services', 'media & entertainment', 'construction'];
-  const projectTypes = ['application', 'code samples'];
+  
+  const filterSections = [
+    {
+      title: 'Programming Language',
+      items: availableOptions.programmingLanguages,
+      selected: filters.programmingLanguages,
+      setSelected: (vals: string[]) =>
+        setFilters((prev) => ({ ...prev, programmingLanguages: vals })),
+    },
+    {
+      title: 'Frameworks',
+      items: availableOptions.frameworks,
+      selected: filters.frameworks,
+      setSelected: (vals: string[]) =>
+        setFilters((prev) => ({ ...prev, frameworks: vals })),
+    },
+    {
+      title: 'Azure Services',
+      items: availableOptions.azureServices,
+      selected: filters.azureServices,
+      setSelected: (vals: string[]) =>
+        setFilters((prev) => ({ ...prev, azureServices: vals })),
+    },
+    {
+      title: 'Design Patterns',
+      items: availableOptions.designPatterns,
+      selected: filters.designPatterns,
+      setSelected: (vals: string[]) =>
+        setFilters((prev) => ({ ...prev, designPatterns: vals })),
+    },
+    {
+      title: 'Industry',
+      items: availableOptions.industries,
+      selected: filters.industries,
+      setSelected: (vals: string[]) =>
+        setFilters((prev) => ({ ...prev, industries: vals })),
+    },
+    {
+      title: 'Project Type',
+      items: availableOptions.projectTypes,
+      selected: filters.projectTypes,
+      setSelected: (vals: string[]) =>
+        setFilters((prev) => ({ ...prev, projectTypes: vals })),
+    },
+    {
+      title: 'Code Complexity', // NEW
+      items: availableOptions.codeComplexities,
+      selected: filters.codeComplexities,
+      setSelected: (vals: string[]) =>
+        setFilters((prev) => ({ ...prev, codeComplexities: vals })),
+    }
+  ];
 
-  /**
-   * Handles the change event for checkboxes.
-   * @param value - The value of the checkbox.
-   * @param selectedValues - The current array of selected values.
-   * @param setFunction - The state setter function for the selected values.
-   */
   const handleCheckboxChange = (
     value: string,
     selectedValues: string[],
@@ -50,55 +99,11 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       </h2>
 
       <div className="space-y-6 text-sm">
-        {/* Helper array to render filter sections dynamically */}
-        {[
-          {
-            title: 'Programming Language',
-            items: programmingLanguages,
-            selected: filters.programmingLanguages,
-            setSelected: (vals: string[]) =>
-              setFilters((prev) => ({ ...prev, programmingLanguages: vals })),
-          },
-          {
-            title: 'Frameworks',
-            items: frameworks,
-            selected: filters.frameworks,
-            setSelected: (vals: string[]) =>
-              setFilters((prev) => ({ ...prev, frameworks: vals })),
-          },
-          {
-            title: 'Azure Services',
-            items: azureServices,
-            selected: filters.azureServices,
-            setSelected: (vals: string[]) =>
-              setFilters((prev) => ({ ...prev, azureServices: vals })),
-          },
-          {
-            title: 'Design Patterns',
-            items: designPatterns,
-            selected: filters.designPatterns,
-            setSelected: (vals: string[]) =>
-              setFilters((prev) => ({ ...prev, designPatterns: vals })),
-          },
-          {
-            title: 'Industry',
-            items: industries,
-            selected: filters.industries,
-            setSelected: (vals: string[]) =>
-              setFilters((prev) => ({ ...prev, industries: vals })),
-          },
-          {
-            title: 'Project Type',
-            items: projectTypes,
-            selected: filters.projectTypes,
-            setSelected: (vals: string[]) =>
-              setFilters((prev) => ({ ...prev, projectTypes: vals })),
-          },
-        ].map(({ title, items, selected, setSelected }) => (
+        {filterSections.map(({ title, items, selected, setSelected }) => (
           <div key={title}>
             <h3 className="font-semibold mb-2">{title}</h3>
             <div className="space-y-2 text-xs">
-              {items.map((item) => (
+              {items.length > 0 ? items.map((item) => (
                 <label key={item} className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -108,7 +113,9 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   />
                   <span>{item}</span>
                 </label>
-              ))}
+              )) : (
+                <p className="text-gray-500 text-xs">No options available</p>
+              )}
             </div>
           </div>
         ))}

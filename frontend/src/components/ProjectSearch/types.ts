@@ -1,7 +1,6 @@
 // frontend/src/components/ProjectSearch/types.ts
-// frontend/src/components/ProjectSearch/types.ts
 export interface Project {
-  id: string; // Made mandatory and of type string
+  id: string;
   projectName?: string;
   projectDescription: string;
   githubUrl: string;
@@ -16,8 +15,9 @@ export interface Project {
   targetAudience?: string;
   approved?: boolean;
   rejectionReason?: string;
+  industries?: string[];
+  review_status?: string; // NEW field to align with backend
 }
-
 
 export interface Filters {
   programmingLanguages: string[];
@@ -26,6 +26,7 @@ export interface Filters {
   designPatterns: string[];
   industries: string[];
   projectTypes: string[];
+  codeComplexities: string[]; // NEW for code complexity
 }
 
 export interface SortOption {

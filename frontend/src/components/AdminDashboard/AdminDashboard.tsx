@@ -22,6 +22,7 @@ const AdminDashboard: React.FC = () => {
     const fetchPendingReviews = async () => {
         setLoading(true);
         try {
+            console.log('Fetching pending reviews...');
             const response = await fetch('/api/admin/get_pending_reviews', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
@@ -32,10 +33,14 @@ const AdminDashboard: React.FC = () => {
             }
 
             const data = await response.json();
-            const camelData: Project[] = toCamelCase(data.pendingReviews);
+            console.log('Raw API response:', data);
+
+            const camelData = Array.isArray(data) ? toCamelCase(data) : [];
+            console.log('Transformed data:', camelData);
+
             setPendingReviews(camelData);
         } catch (error: any) {
-            console.error(error);
+            console.error('Error in fetchPendingReviews:', error);
             toast.error(error.message || 'An error occurred while fetching reviews.');
         } finally {
             setLoading(false);
@@ -76,6 +81,7 @@ const AdminDashboard: React.FC = () => {
             setActionLoading(null);
         }
     };
+
     const handleReject = async (id: string, reason: string) => {
         setActionLoading(id);
         try {
@@ -101,6 +107,9 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
+    console.log('Current pendingReviews state:', pendingReviews);
+    console.log('Loading state:', loading);
+
     return (
         <div className="p-6 bg-neutral-900 min-h-screen">
             <h1 className="text-2xl font-bold text-indigo-400 mb-6">Admin Dashboard - Pending Reviews</h1>
@@ -110,12 +119,12 @@ const AdminDashboard: React.FC = () => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-6">
-                    {pendingReviews.length === 0 ? (
+                    {!pendingReviews || pendingReviews.length === 0 ? (
                         <p className="text-gray-300">No pending reviews.</p>
                     ) : (
                         pendingReviews.map(project => (
                             <Card key={project.id} className="bg-neutral-800 border-neutral-700">
-                                <CardContent>
+                                <CardContent className="pt-6">
                                     <CardTitle className="text-white font-semibold text-lg">
                                         {project.projectName || 'No Name Provided'}
                                     </CardTitle>

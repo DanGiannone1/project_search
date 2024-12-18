@@ -86,7 +86,7 @@ def search_projects(query: str, filters: Dict, sort: str) -> List[Dict]:
             # sort=sort_order,
             select=["id", "project_name", "project_description", "github_url", "owner",
                     "programming_languages", "frameworks", "azure_services",
-                    "design_patterns", "project_type", "code_complexity",
+                    "design_patterns", "project_type", "code_complexity", "industries",
                     "business_value", "target_audience"],
             top=8
         )
@@ -106,6 +106,7 @@ def search_projects(query: str, filters: Dict, sort: str) -> List[Dict]:
                 "designPatterns": result.get("design_patterns", []),
                 "projectType": result.get("project_type", ""),
                 "codeComplexity": result.get("code_complexity", ""),
+                "industries": result.get("industries", []),
                 "businessValue": result.get("business_value", ""),
                 "targetAudience": result.get("target_audience", "")
             }
@@ -148,7 +149,8 @@ def add_project(data: Dict) -> Dict:
             "design_patterns": data.get('designPatterns', []),
             "project_type": data.get('projectType', ''),
             "business_value": data.get('businessValue', ''),
-            "target_audience": data.get('targetAudience', '')
+            "target_audience": data.get('targetAudience', ''),
+            "industries": data.get('industries', [])
         }
 
         print(json.dumps(new_project, indent=2))

@@ -1,5 +1,5 @@
 // frontend/src/components/ProjectSearch/ProjectSearch.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FilterSidebar from './FilterSidebar';
 import SearchCard from './SearchCard';
 import ResultsDisplay from './ResultsDisplay';
@@ -24,9 +24,34 @@ function ProjectSearch() {
     designPatterns: [],
     industries: [],
     projectTypes: [],
+    codeComplexities: [] // NEW
   });
 
   const [selectedSort, setSelectedSort] = useState<string>('');
+
+  const [availableOptions, setAvailableOptions] = useState({
+    programmingLanguages: [],
+    frameworks: [],
+    azureServices: [],
+    designPatterns: [],
+    industries: [],
+    projectTypes: [],
+    codeComplexities: [] // NEW
+  });
+
+  useEffect(() => {
+    async function fetchFilterOptions() {
+      try {
+        const res = await fetch('/api/get_filter_options');
+        const data = await res.json();
+        setAvailableOptions(data);
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      }
+    }
+
+    fetchFilterOptions();
+  }, []);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -60,6 +85,7 @@ function ProjectSearch() {
           sortOptions={sortOptions}
           selectedSort={selectedSort}
           setSelectedSort={setSelectedSort}
+          availableOptions={availableOptions}
         />
       </div>
       <div className="flex-1 overflow-y-auto pt-16">

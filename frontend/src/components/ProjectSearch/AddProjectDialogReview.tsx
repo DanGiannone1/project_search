@@ -1,10 +1,10 @@
-// frontend/src/components/ProjectSearch/AddProjectDialogReview.tsx
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { Project } from './types';
+import ArrayInput from './ArrayInput';
 
 interface AddProjectDialogReviewProps {
   extractedData: Project;
@@ -27,7 +27,6 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
 
   return (
     <div className="space-y-4 mt-4">
-      {/* GitHub URL */}
       <div>
         <label className="block text-sm font-semibold mb-1 text-indigo-400">GitHub URL</label>
         <Input
@@ -43,7 +42,6 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
         />
       </div>
 
-      {/* Owner */}
       <div>
         <label className="block text-sm font-semibold mb-1 text-indigo-400">Owner</label>
         <Input
@@ -53,7 +51,6 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
         />
       </div>
 
-      {/* Project Name */}
       <div>
         <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Name</label>
         <Input
@@ -69,7 +66,6 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
         />
       </div>
 
-      {/* Project Description */}
       <div>
         <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Description</label>
         <Textarea
@@ -85,71 +81,67 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
         />
       </div>
 
-      {/* Programming Languages */}
-      <div>
-        <label className="block text-sm font-semibold mb-1 text-indigo-400">Programming Languages (comma separated)</label>
-        <Input
-          placeholder="Programming Languages"
-          value={extractedData.programmingLanguages?.join(', ') || ''}
-          onChange={(e) =>
-            setExtractedData({
-              ...extractedData,
-              programmingLanguages: e.target.value.split(',').map(lang => lang.trim()),
-            })
-          }
-          className="bg-neutral-800 border-neutral-700 text-white h-12"
-        />
-      </div>
+      <ArrayInput
+        label="Programming Languages"
+        value={extractedData.programmingLanguages || []}
+        onChange={(value) =>
+          setExtractedData({
+            ...extractedData,
+            programmingLanguages: value,
+          })
+        }
+        placeholder="Enter programming languages..."
+      />
 
-      {/* Frameworks */}
-      <div>
-        <label className="block text-sm font-semibold mb-1 text-indigo-400">Frameworks (comma separated)</label>
-        <Input
-          placeholder="Frameworks"
-          value={extractedData.frameworks?.join(', ') || ''}
-          onChange={(e) =>
-            setExtractedData({
-              ...extractedData,
-              frameworks: e.target.value.split(',').map(fw => fw.trim()),
-            })
-          }
-          className="bg-neutral-800 border-neutral-700 text-white h-12"
-        />
-      </div>
+      <ArrayInput
+        label="Frameworks"
+        value={extractedData.frameworks || []}
+        onChange={(value) =>
+          setExtractedData({
+            ...extractedData,
+            frameworks: value,
+          })
+        }
+        placeholder="Enter frameworks..."
+      />
 
-      {/* Azure Services */}
-      <div>
-        <label className="block text-sm font-semibold mb-1 text-indigo-400">Azure Services (comma separated)</label>
-        <Input
-          placeholder="Azure Services"
-          value={extractedData.azureServices?.join(', ') || ''}
-          onChange={(e) =>
-            setExtractedData({
-              ...extractedData,
-              azureServices: e.target.value.split(',').map(service => service.trim()),
-            })
-          }
-          className="bg-neutral-800 border-neutral-700 text-white h-12"
-        />
-      </div>
+      <ArrayInput
+        label="Azure Services"
+        value={extractedData.azureServices || []}
+        onChange={(value) =>
+          setExtractedData({
+            ...extractedData,
+            azureServices: value,
+          })
+        }
+        placeholder="Enter Azure services..."
+      />
 
-      {/* Design Patterns */}
-      <div>
-        <label className="block text-sm font-semibold mb-1 text-indigo-400">Design Patterns (comma separated)</label>
-        <Input
-          placeholder="Design Patterns"
-          value={extractedData.designPatterns?.join(', ') || ''}
-          onChange={(e) =>
-            setExtractedData({
-              ...extractedData,
-              designPatterns: e.target.value.split(',').map(dp => dp.trim()),
-            })
-          }
-          className="bg-neutral-800 border-neutral-700 text-white h-12"
-        />
-      </div>
+      <ArrayInput
+        label="Design Patterns"
+        value={extractedData.designPatterns || []}
+        onChange={(value) =>
+          setExtractedData({
+            ...extractedData,
+            designPatterns: value,
+          })
+        }
+        placeholder="Enter design patterns..."
+      />
 
-      {/* Project Type */}
+      <ArrayInput
+        label="Industries"
+        value={extractedData.industries || []}
+        onChange={(value) =>
+          setExtractedData({
+            ...extractedData,
+            industries: value,
+          })
+        }
+        placeholder="Enter industries..."
+        multiline={true}
+      />
+
       <div>
         <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Type</label>
         <Input
@@ -165,7 +157,6 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
         />
       </div>
 
-      {/* Code Complexity */}
       <div>
         <label className="block text-sm font-semibold mb-1 text-indigo-400">Code Complexity</label>
         <div className="flex space-x-2">
@@ -187,7 +178,6 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
         </div>
       </div>
 
-      {/* Business Value */}
       <div>
         <label className="block text-sm font-semibold mb-1 text-indigo-400">Business Value</label>
         <Textarea
@@ -203,7 +193,6 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
         />
       </div>
 
-      {/* Target Audience */}
       <div>
         <label className="block text-sm font-semibold mb-1 text-indigo-400">Target Audience</label>
         <Textarea
@@ -219,12 +208,10 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
         />
       </div>
 
-      {/* Error Message */}
       {error && (
         <p className="text-red-500 text-sm">{error}</p>
       )}
 
-      {/* Submit Button */}
       <Button
         className="w-full"
         onClick={handleFinalSubmit}
@@ -241,7 +228,6 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
         )}
       </Button>
 
-      {/* Cancel Button */}
       <Button
         variant="secondary"
         className="w-full mt-2"

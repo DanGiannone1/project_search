@@ -17,10 +17,15 @@ from pydantic import BaseModel
 from langchain_openai import AzureChatOpenAI
 from azure.communication.email import EmailClient
 from projects import search_projects, add_project
+from cosmosdb import CosmosDBManager
 
 # Initialize EmailClient
 acs_conn_str = os.getenv("COMMUNICATION_SERVICES_CONNECTION_STRING")
 email_client = EmailClient.from_connection_string(acs_conn_str)
+
+cosmos_db = CosmosDBManager(cosmos_database_id=os.environ.get("COSMOS_DATABASE_ID"),
+                            cosmos_container_id=os.environ.get("COSMOS_CONTAINER_ID"))
+
 
 app = Flask(__name__, static_folder='dist', static_url_path='')
 CORS(app)  # Enable CORS
@@ -55,19 +60,22 @@ class ExtractionResponse(BaseModel):
     frameworks: List[str]
     azure_services: List[str]
     design_patterns: List[str]
-    project_type: str
+    project_type: Literal['Educational/Demo', 'Accelerator']  # Modified
     code_complexity: Literal['Beginner', 'Intermediate', 'Advanced']
     business_value: str
     target_audience: str
-
-
-pending_reviews = []
+    Industries: List[str]
 
 
 
 # ----------------------------
 # Helper Functions
 # ----------------------------
+
+def generate_document_id(github_url: str) -> str:
+    """Generate a unique, deterministic ID for a document."""
+    unique_string = f"{github_url}"  # Use the GitHub URL for uniqueness
+    return hashlib.md5(unique_string.encode()).hexdigest()
 
 
 
@@ -112,10 +120,11 @@ def process_readme(readme_content: str) -> ExtractionResponse:
 - Frameworks: Semantic Kernel, Autogen, Langgraph, Langchain, etc.
 - Azure Services: Azure OpenAI, Azure Cosmos DB, Azure Data Lake Storage, etc.
 - Design Patterns: RAG, single agent, multi-agent, etc.
-- Project Type: Full application or demo.
+- Project Type: 'Educational/Demo' or 'Accelerator' (a full fledged application that someone can immediately deploy and start using)
 - Code complexity: Beginner, Intermediate, or Advanced.
-- Business Value: What is the business value of this codebase? What problem does it solve? How would using this codebase benefit a company in terms of its business outcomes?
-- Target Audience: Who is the target audience for this codebase?
+- Business Value: What is the business value of this codebase?
+- Target Audience: Who is the target audience?
+- Industries: e.g. professional services, media & entertainment, construction, etc. (can be more than one. If not sure, leave blank. If you think it could apply to all or most industries, output 'all')
 """
 
         messages = [
@@ -309,36 +318,93 @@ def serve(path):
 @app.route('/api/admin/get_pending_reviews', methods=['GET'])
 def get_pending_reviews():
     try:
-        return jsonify({"pendingReviews": pending_reviews}), 200
+        # Query only pending reviews now
+        query = "SELECT * FROM c WHERE c.review_status = 'pending'"
+        parameters = []
+        pending_reviews = cosmos_db.query_items(query, parameters)
+        return jsonify(pending_reviews), 200
     except Exception as e:
-        print(f"Error fetching pending reviews: {str(e)}")
-        return jsonify({"error": "Failed to fetch pending reviews"}), 500
+        print(f"Error fetching pending reviews: {e}")
+        return jsonify({"error": str(e)}), 500
 
+@app.route('/api/get_filter_options', methods=['GET'])
+def get_filter_options():
+    try:
+        # Query only approved projects
+        query = "SELECT * FROM c WHERE c.review_status = 'approved'"
+        projects = cosmos_db.query_items(query)
 
+        prog_langs = set()
+        frameworks = set()
+        azure_services = set()
+        design_patterns = set()
+        industries = set()
+        project_types = set()
+        code_complexities = set()
+
+        for p in projects:
+            for pl in p.get('programmingLanguages', []):
+                prog_langs.add(pl)
+            for fw in p.get('frameworks', []):
+                frameworks.add(fw)
+            for az in p.get('azureServices', []):
+                azure_services.add(az)
+            for dp in p.get('designPatterns', []):
+                design_patterns.add(dp)
+            for ind in p.get('industries', []):
+                industries.add(ind)
+            if 'projectType' in p and p['projectType']:
+                project_types.add(p['projectType'])
+            if 'codeComplexity' in p and p['codeComplexity']:
+                code_complexities.add(p['codeComplexity'])
+
+        return jsonify({
+            "programmingLanguages": sorted(list(prog_langs)),
+            "frameworks": sorted(list(frameworks)),
+            "azureServices": sorted(list(azure_services)),
+            "designPatterns": sorted(list(design_patterns)),
+            "industries": sorted(list(industries)),
+            "projectTypes": sorted(list(project_types)),
+            "codeComplexities": sorted(list(code_complexities))  # NEW
+        }), 200
+
+    except Exception as e:
+        print(f"Error in get_filter_options: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# Update /api/admin/approve_project endpoint
 @app.route('/api/admin/approve_project', methods=['POST'])
 def approve_project():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        # Set review_status = approved
+        data['review_status'] = 'approved'
+        data['partitionKey'] = 'project'
+        # Update the item in Cosmos
+        cosmos_db.upsert_item(data)
 
+        # Add the project to the search index
+        result = add_project(data)
+        if result.get("success"):
+            # No deletion needed since we keep data in Cosmos.
+            return jsonify({"message": "Project approved and added to index.", "project": result["project"]}), 200
+        else:
+            return jsonify({"error": result.get("error", "Failed to add project.")}), 500
+    except Exception as e:
+        print(f"Error in approve_project: {e}")
+        return jsonify({"error": str(e)}), 500
 
-    #print whole payload
-    print(json.dumps(data, indent=2))
-
-    # Call add_project with full payload (owner is included in data)
-    result = add_project(data)  # Changed from add_project(data, user_identity)
-
-    if result.get("success"):
-        # Remove from pending_reviews
-        return jsonify({"message": "Project approved and added successfully."}), 200
-    else:
-        return jsonify({"error": result.get("error", "Failed to approve project.")}), 500
-
-
-
+# Update /api/admin/reject_project endpoint
 @app.route('/api/admin/reject_project', methods=['POST'])
 def reject_project():
-    # Placeholder logic
-    return jsonify({"message": "Project rejected (placeholder)"}), 200
-
+    try:
+        data = request.get_json()
+        # Remove from Cosmos DB
+        cosmos_db.delete_item(item_id=data['id'], partition_key='project')
+        return jsonify({"message": "Project rejected and removed from pending reviews."}), 200
+    except Exception as e:
+        print(f"Error in reject_project: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/search_projects', methods=['POST'])
 def search():
@@ -371,30 +437,6 @@ def search():
         }), 500
 
 
-# backend/app.py
-
-# @app.route('/api/add_project', methods=['POST'])
-# def add_project_route():
-#     data = request.get_json()
-
-#     # Get the 'X-MS-CLIENT-PRINCIPAL' header
-#     client_principal = request.headers.get('X-MS-CLIENT-PRINCIPAL')
-#     if client_principal:
-#         # Decode the principal if it's encoded (assuming base64)
-#         import base64, json
-#         decoded = base64.b64decode(client_principal).decode('utf-8')
-#         client_principal = json.loads(decoded)
-#         user_identity = get_user_identity(client_principal)
-#     else:
-#         user_identity = 'anonymous'
-
-#     # Call the add_project function from search.py
-#     result = add_project(data, user_identity)
-
-#     if result.get("success"):
-#         return jsonify({"message": "Project added successfully.", "project": result["project"]}), 201
-#     else:
-#         return jsonify({"error": result.get("error", "Failed to add project.")}), 500
 
 @app.route('/api/submit_repo', methods=['POST'])
 def submit_repo():
@@ -440,15 +482,19 @@ def send_for_review():
     data = request.get_json()
     success = send_email(data)
     if success:
-        pending_reviews.append(data)
-        print("Pending Reviews:")
-        for review in pending_reviews:
-            print(json.dumps(review, indent=2))
-        return jsonify({"message": "Email sent successfully"}), 200
+        try:
+            data['id'] = generate_document_id(data.get('githubUrl', ''))
+            # Instead of partitionKey = 'pending_review', use 'project'
+            data['partitionKey'] = 'project'
+            data['review_status'] = 'pending'  # NEW
+            # Upsert into Cosmos DB
+            cosmos_db.upsert_item(data)
+            return jsonify({"message": "Review request sent successfully."}), 200
+        except Exception as e:
+            print(f"Error adding pending review: {e}")
+            return jsonify({"error": str(e)}), 500
     else:
-        return jsonify({"error": "Failed to send email"}), 500
-
-
+        return jsonify({"error": "Failed to send review request."}), 500
 
 
 if __name__ == '__main__':

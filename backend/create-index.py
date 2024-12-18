@@ -83,6 +83,7 @@ def create_index():
         SimpleField(name="project_type", type=SearchFieldDataType.String, filterable=True),
         SearchableField(name="business_value", type=SearchFieldDataType.String),
         SearchableField(name="target_audience", type=SearchFieldDataType.String),
+        SimpleField(name="industries", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
         SearchField(
             name="description_vector",
             type=SearchFieldDataType.Collection(SearchFieldDataType.Single),

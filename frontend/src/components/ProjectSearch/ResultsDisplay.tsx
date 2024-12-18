@@ -2,32 +2,13 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Project } from './types';
-import { ExternalLink, Code2, Box, Layers, LayoutTemplate, Activity, Cloud, Gem, User } from 'lucide-react';
+import { ExternalLink, Code2, Box, Layers, LayoutTemplate, Activity, Cloud, Gem, User, Globe  } from 'lucide-react';
 
 interface ResultsDisplayProps {
     results: Project[];
 }
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
-    /**
-     * Updated UI/UX Improvements:
-     * - Introduce icons next to each category heading for a more modern, visual touch.
-     * - Adjust the color scheme so Programming Languages don't resemble the Project Title's gradient:
-     *   - Programming Languages: Red
-     *   - Frameworks: Green
-     *   - Project Type: Cyan
-     *   - Design Patterns: Yellow
-     *   - Code Complexity: Orange
-     *   - Azure Services: Blue
-     *   - Business Value: Pink
-     *   - Target Audience: Rose
-     *
-     * - Add subtle hover effect on the card (slightly raise card with shadow).
-     * - Slightly refine spacing and typography for better readability.
-     * - Use consistent "text-xs font-medium" for all headings, plus icons for a modern feel.
-     * - Ensure distinctiveness by using different hues and clearly separated sections.
-     */
-
     return (
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
             {results.map((result) => (
@@ -40,11 +21,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
                         {/* Header Section */}
                         <div className="flex justify-between items-start gap-4">
                             <div className="min-w-0 flex-1">
-                                {result.projectName && (
-                                    <h2 className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-500 truncate">
-                                        {result.projectName}
-                                    </h2>
-                                )}
+                                <h2 className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-500 truncate">
+                                    {result.projectName || 'Untitled Project'}
+                                </h2>
                                 <p className="text-sm text-gray-400 mt-1 truncate">
                                     {result.owner || 'anonymous'}
                                 </p>
@@ -61,10 +40,10 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
                             </a>
                         </div>
                         
-                        {/* Description Section with border */}
+                        {/* Description Section */}
                         <div className="prose prose-invert prose-sm max-w-none pb-6 border-b border-neutral-800">
                             <p className="text-gray-300 leading-relaxed">
-                                {result.projectDescription}
+                                {result.projectDescription || 'No description available'}
                             </p>
                         </div>
 
@@ -145,47 +124,66 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
                             </div>
                         </div>
                         
-                        {/* Azure Services with border */}
+                        {/* Azure Services */}
                         <div className="pb-6 border-b border-neutral-800">
-                            {result.azureServices && result.azureServices.length > 0 && (
-                                <div>
-                                    <h3 className="text-blue-400 text-xs font-medium mb-2 flex items-center gap-1">
-                                        <Cloud className="w-4 h-4" /> Azure Services
-                                    </h3>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {result.azureServices.map((service, index) => (
+                            <div>
+                                <h3 className="text-blue-400 text-xs font-medium mb-2 flex items-center gap-1">
+                                    <Cloud className="w-4 h-4" /> Azure Services
+                                </h3>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {result.azureServices && result.azureServices.length > 0 ? (
+                                        result.azureServices.map((service, index) => (
                                             <span key={index} className="px-2 py-1 bg-blue-900/50 text-gray-300 text-xs rounded-md">
                                                 {service}
                                             </span>
-                                        ))}
-                                    </div>
+                                        ))
+                                    ) : (
+                                        <span className="px-2 py-1 bg-gray-600/50 text-gray-300 text-xs rounded-md">N/A</span>
+                                    )}
                                 </div>
-                            )}
+                            </div>
                         </div>
 
-                        {/* Business Value */}
-                        {result.businessValue && (
+                        {/* Business Context Section */}
+                        <div>
+                            {/* Industries */}
                             <div className="pt-2">
-                                <h3 className="text-pink-400 text-xs font-medium mb-2 flex items-center gap-1">
+                            <h3 className="text-pink-400 text-xs font-medium mb-2 flex items-center gap-1">
+                                <Globe className="w-4 h-4" /> Industries
+                            </h3>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {result.industries && result.industries.length > 0 ? (
+                                        result.industries.map((ind, index) => (
+                                            <span key={index} className="px-2 py-1 bg-pink-900/50 text-gray-300 text-xs rounded-md">
+                                                {ind}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <span className="px-2 py-1 bg-gray-600/50 text-gray-300 text-xs rounded-md">N/A</span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Business Value */}
+                            <div className="pt-6">
+                                <h3 className="text-teal-400 text-xs font-medium mb-2 flex items-center gap-1">
                                     <Gem className="w-4 h-4" /> Business Value
                                 </h3>
                                 <p className="text-gray-300 text-sm leading-relaxed">
-                                    {result.businessValue}
+                                    {result.businessValue || 'No business value provided'}
                                 </p>
                             </div>
-                        )}
-                        
-                        {/* Target Audience */}
-                        {result.targetAudience && (
-                             <div>
-                             <h3 className="text-rose-400 text-xs font-medium mb-2 flex items-center gap-1">
-                                 <User className="w-4 h-4" /> Target Audience
-                             </h3>
-                             <p className="text-gray-300 text-sm leading-relaxed">
-                                 {result.targetAudience}
-                             </p>
-                         </div>
-                        )}
+                            
+                            {/* Target Audience - remains unchanged */}
+                            <div className="pt-6">
+                                <h3 className="text-rose-400 text-xs font-medium mb-2 flex items-center gap-1">
+                                    <User className="w-4 h-4" /> Target Audience
+                                </h3>
+                                <p className="text-gray-300 text-sm leading-relaxed">
+                                    {result.targetAudience || 'No target audience specified'}
+                                </p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             ))}

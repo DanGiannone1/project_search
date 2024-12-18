@@ -1,11 +1,11 @@
-// frontend/src/components/AdminDashboard/AdminReviewDialog.tsx
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { Project } from '@/components/ProjectSearch/types';
-import { Textarea} from '@/components/ui/textarea';
+import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import ArrayInput from '@/components/ProjectSearch/ArrayInput';
 
 interface AdminReviewDialogProps {
     isOpen: boolean;
@@ -39,6 +39,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
         setIsSubmitting(false);
     };
 
+    const complexityOptions = ['Beginner', 'Intermediate', 'Advanced'];
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl w-full bg-neutral-900 border border-neutral-700 overflow-y-auto max-h-[90vh] p-6 rounded-lg">
@@ -63,6 +65,7 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             disabled
                         />
                     </div>
+
                     <div>
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">Owner</label>
                         <Input
@@ -71,6 +74,7 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             disabled
                         />
                     </div>
+
                     <div>
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Name</label>
                         <Input
@@ -85,6 +89,7 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
                         />
                     </div>
+
                     <div>
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Description</label>
                         <Textarea
@@ -99,62 +104,68 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-32"
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Programming Languages (comma separated)</label>
-                        <Input
-                            placeholder="Programming Languages"
-                            value={editedProject.programmingLanguages?.join(', ') || ''}
-                            onChange={(e) =>
-                                setEditedProject({
-                                    ...editedProject,
-                                    programmingLanguages: e.target.value.split(',').map(lang => lang.trim()),
-                                })
-                            }
-                            className="bg-neutral-800 border-neutral-700 text-white h-12"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Frameworks (comma separated)</label>
-                        <Input
-                            placeholder="Frameworks"
-                            value={editedProject.frameworks?.join(', ') || ''}
-                            onChange={(e) =>
-                                setEditedProject({
-                                    ...editedProject,
-                                    frameworks: e.target.value.split(',').map(fw => fw.trim()),
-                                })
-                            }
-                            className="bg-neutral-800 border-neutral-700 text-white h-12"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Azure Services (comma separated)</label>
-                        <Input
-                            placeholder="Azure Services"
-                            value={editedProject.azureServices?.join(', ') || ''}
-                            onChange={(e) =>
-                                setEditedProject({
-                                    ...editedProject,
-                                    azureServices: e.target.value.split(',').map(service => service.trim()),
-                                })
-                            }
-                            className="bg-neutral-800 border-neutral-700 text-white h-12"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Design Patterns (comma separated)</label>
-                        <Input
-                            placeholder="Design Patterns"
-                            value={editedProject.designPatterns?.join(', ') || ''}
-                            onChange={(e) =>
-                                setEditedProject({
-                                    ...editedProject,
-                                    designPatterns: e.target.value.split(',').map(dp => dp.trim()),
-                                })
-                            }
-                            className="bg-neutral-800 border-neutral-700 text-white h-12"
-                        />
-                    </div>
+
+                    <ArrayInput
+                        label="Programming Languages"
+                        value={editedProject.programmingLanguages || []}
+                        onChange={(value) =>
+                            setEditedProject({
+                                ...editedProject,
+                                programmingLanguages: value,
+                            })
+                        }
+                        placeholder="Enter programming languages..."
+                    />
+
+                    <ArrayInput
+                        label="Frameworks"
+                        value={editedProject.frameworks || []}
+                        onChange={(value) =>
+                            setEditedProject({
+                                ...editedProject,
+                                frameworks: value,
+                            })
+                        }
+                        placeholder="Enter frameworks..."
+                    />
+
+                    <ArrayInput
+                        label="Azure Services"
+                        value={editedProject.azureServices || []}
+                        onChange={(value) =>
+                            setEditedProject({
+                                ...editedProject,
+                                azureServices: value,
+                            })
+                        }
+                        placeholder="Enter Azure services..."
+                    />
+
+                    <ArrayInput
+                        label="Design Patterns"
+                        value={editedProject.designPatterns || []}
+                        onChange={(value) =>
+                            setEditedProject({
+                                ...editedProject,
+                                designPatterns: value,
+                            })
+                        }
+                        placeholder="Enter design patterns..."
+                    />
+
+                    <ArrayInput
+                        label="Industries"
+                        value={editedProject.industries || []}
+                        onChange={(value) =>
+                            setEditedProject({
+                                ...editedProject,
+                                industries: value,
+                            })
+                        }
+                        placeholder="Enter industries..."
+                        multiline={true}
+                    />
+
                     <div>
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Type</label>
                         <Input
@@ -169,10 +180,11 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
                         />
                     </div>
+
                     <div>
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">Code Complexity</label>
                         <div className="flex space-x-2">
-                            {['Beginner', 'Intermediate', 'Advanced'].map((option) => (
+                            {complexityOptions.map((option) => (
                                 <Button
                                     key={option}
                                     variant={editedProject.codeComplexity === option ? 'accentGradient' : 'secondary'}
@@ -189,6 +201,7 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             ))}
                         </div>
                     </div>
+
                     <div>
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">Business Value</label>
                         <Textarea
@@ -203,6 +216,7 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="bg-neutral-800 border-neutral-700 text-white h-32"
                         />
                     </div>
+
                     <div>
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">Target Audience</label>
                         <Textarea
@@ -225,12 +239,12 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="flex-1 bg-green-600 hover:bg-green-500 focus-visible:ring-green-400 text-white"
                         >
                             {isSubmitting ? (
-                            <div className="flex items-center space-x-2">
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                <span>Approving...</span>
-                            </div>
+                                <div className="flex items-center space-x-2">
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <span>Approving...</span>
+                                </div>
                             ) : (
-                            'Approve'
+                                'Approve'
                             )}
                         </Button>
                         <Button
@@ -239,12 +253,12 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             className="flex-1 bg-red-600 hover:bg-red-500 focus-visible:ring-red-400 text-white"
                         >
                             {isSubmitting ? (
-                            <div className="flex items-center space-x-2">
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                <span>Rejecting...</span>
-                            </div>
+                                <div className="flex items-center space-x-2">
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <span>Rejecting...</span>
+                                </div>
                             ) : (
-                            'Reject'
+                                'Reject'
                             )}
                         </Button>
                     </div>
