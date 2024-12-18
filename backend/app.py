@@ -13,7 +13,7 @@ from langchain_openai import AzureChatOpenAI
 from azure.communication.email import EmailClient
 from projects import search_projects, add_project
 from cosmosdb import CosmosDBManager
-
+from azure.identity import DefaultAzureCredential
 import logging
 from applicationinsights.flask.ext import AppInsights
 
@@ -27,6 +27,27 @@ email_client = EmailClient.from_connection_string(acs_conn_str)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+logger.info("Logging in via DefaultAzureCredential...")
+logger = logging.getLogger('azure.identity')
+
+try:
+    credential = DefaultAzureCredential(logging_enable=True)
+    logger.info("Successfully authenticated via DefaultAzureCredential")
+except:
+    raise Exception("Failed to authenticate via DefaultAzureCredential")        
+
+
+try:
+    user = os.getlogin()
+    logger.info(f"Current user (getlogin): {user}")
+except Exception as e:
+    logger.info(f"Could not get login: {e}")
+
+
+
+
+COSMOS_DATABASE_ID = "codewith_project_search"
+COSMOS_CONTAINER_ID = "project_container"
 
 
 try:
@@ -45,9 +66,9 @@ CORS(app)  # Enable CORS
 # Load environment variables from .env file
 load_dotenv()
 
-APPINSIGHTS_INSTRUMENTATION_KEY = os.getenv("APPINSIGHTS_INSTRUMENTATION_KEY")
 
-app.config['APPINSIGHTS_INSTRUMENTATIONKEY'] = APPINSIGHTS_INSTRUMENTATION_KEY
+
+app.config['APPINSIGHTS_INSTRUMENTATIONKEY'] = os.getenv("APPINSIGHTS_INSTRUMENTATIONKEY")
 appinsights = AppInsights(app)
 
 

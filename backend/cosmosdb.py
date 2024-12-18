@@ -2,9 +2,8 @@
 ### cosmos_db.py ###
 
 This module handles interactions with Azure Cosmos DB, including database and container creation,
-and CRUD operations on documents. It automatically selects between key-based and DefaultAzureCredential
-authentication based on the presence of COSMOS_MASTER_KEY. Logging is configured to show only
-custom messages.
+and CRUD operations on documents. It uses DefaultAzureCredential for authentication.
+Logging is configured to show only custom messages.
 
 Requirements:
     azure-cosmos==4.5.1
@@ -12,14 +11,12 @@ Requirements:
 """
 
 import os
-import requests
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from azure.cosmos import CosmosClient, exceptions, PartitionKey
 from azure.cosmos.container import ContainerProxy
 from azure.cosmos.database import DatabaseProxy
 from azure.identity import DefaultAzureCredential
-import json
 
 class CosmosDBManager:
     def __init__(self, cosmos_database_id=None, cosmos_container_id=None):
@@ -33,50 +30,19 @@ class CosmosDBManager:
         load_dotenv()
         self.cosmos_database_id = cosmos_database_id or os.environ.get("COSMOS_DATABASE_ID")
         self.cosmos_container_id = cosmos_container_id or os.environ.get("COSMOS_CONTAINER_ID")
-        self.tenant_id = os.environ.get("TENANT_ID", '16b3c013-d300-468d-ac64-7eda0820b6d3')
+        self.tenant_id = os.environ.get("TENANT_ID", 'your-tenant-id')
 
         if not all([self.cosmos_database_id, self.cosmos_container_id]):
             raise ValueError("Cosmos DB configuration is incomplete")
 
     def _get_cosmos_client(self):
-        connection_string_url = os.environ.get("AZURE_COSMOS_LISTCONNECTIONSTRINGURL")
-        resource_endpoint = os.environ.get("AZURE_COSMOS_RESOURCEENDPOINT")
+        resource_endpoint = os.environ.get("COSMOS_HOST")
+        if not resource_endpoint:
+            raise ValueError("COSMOS_HOST environment variable is required")
 
-        if connection_string_url:
-            # If you prefer connection string based auth, do this:
-            try:
-                response = requests.get(connection_string_url)
-                response.raise_for_status()
-                connection_string_data = response.json()
-                connection_string = connection_string_data["connectionString"]
-                print("Using connection string from Service Connector URL")
-                return CosmosClient.from_connection_string(connection_string)
-            except Exception as e:
-                print(f"Error retrieving connection string from URL: {e}")
-                # If it fails, fallback to managed identity
-                if resource_endpoint:
-                    print("Attempting to use managed identity due to failure with connection string URL.")
-                    credential = DefaultAzureCredential()
-                    return CosmosClient(resource_endpoint, credential=credential)
-                else:
-                    raise
-
-        elif resource_endpoint:
-            # Prefer managed identity if we have a resource endpoint
-            print("Using managed identity for Cosmos DB authentication (Production)")
-            credential = DefaultAzureCredential()
-            return CosmosClient(resource_endpoint, credential=credential)
-
-        else:
-            # Local development fallback
-            print("Falling back to DefaultAzureCredential for local development")
-            credential = DefaultAzureCredential()
-            endpoint = os.environ.get("COSMOS_HOST")
-            if not endpoint:
-                raise ValueError("COSMOS_HOST environment variable is required for local DefaultAzureCredential authentication.")
-            return CosmosClient(endpoint, credential=credential)
-
-
+        print("Using DefaultAzureCredential for Cosmos DB authentication")
+        credential = DefaultAzureCredential()
+        return CosmosClient(resource_endpoint, credential=credential)
 
     def _initialize_database_and_container(self) -> None:
         try:
@@ -97,7 +63,10 @@ class CosmosDBManager:
 
     def _create_or_get_container(self) -> ContainerProxy:
         try:
-            container = self.database.create_container(id=self.cosmos_container_id, partition_key=PartitionKey(path='/partitionKey'))
+            container = self.database.create_container(
+                id=self.cosmos_container_id,
+                partition_key=PartitionKey(path='/partitionKey')
+            )
             print(f'Container with id \'{self.cosmos_container_id}\' created')
         except exceptions.CosmosResourceExistsError:
             container = self.database.get_container_client(self.cosmos_container_id)
@@ -105,48 +74,30 @@ class CosmosDBManager:
         return container
 
     def create_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Create a new item in the container. Fails if an item with the same ID already exists.
-
-        :param item: The item to create
-        :return: The created item, or None if creation failed
-        """
         try:
             created_item = self.container.create_item(body=item)
             print(f"Item created with id: {created_item['id']}")
             return created_item
         except exceptions.CosmosResourceExistsError:
-            print(f"Item with id {item['id']} already exists. Use update_item or upsert_item to modify.")
+            print(f"Item with id {item['id']} already exists.")
             return None
         except exceptions.CosmosHttpResponseError as e:
             print(f"An error occurred during creation: {e.message}")
             return None
 
     def update_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Update an existing item in the container. Fails if the item doesn't exist.
-
-        :param item: The item to update (must include 'id' and 'partitionKey')
-        :return: The updated item, or None if update failed
-        """
         try:
             updated_item = self.container.replace_item(item=item['id'], body=item)
             print(f"Item updated with id: {updated_item['id']}")
             return updated_item
         except exceptions.CosmosResourceNotFoundError:
-            print(f"Item with id {item['id']} not found. Unable to update.")
+            print(f"Item with id {item['id']} not found.")
             return None
         except exceptions.CosmosHttpResponseError as e:
             print(f"An error occurred during update: {e.message}")
             return None
 
     def upsert_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Upsert (create or update) an item in the container.
-
-        :param item: The item to upsert
-        :return: The upserted item, or None if upsert failed
-        """
         try:
             upserted_item = self.container.upsert_item(body=item)
             print(f"Item upserted with id: {upserted_item['id']}")
@@ -155,7 +106,8 @@ class CosmosDBManager:
             print(f"An error occurred during upsert: {e.message}")
             return None
 
-    def query_items(self, query: str, parameters: Optional[List[Dict[str, Any]]] = None, partition_key: Optional[str] = None) -> List[Dict[str, Any]]:
+    def query_items(self, query: str, parameters: Optional[List[Dict[str, Any]]] = None,
+                    partition_key: Optional[str] = None) -> List[Dict[str, Any]]:
         try:
             items = list(self.container.query_items(
                 query=query,
@@ -175,13 +127,13 @@ class CosmosDBManager:
             print(f"Item deleted with id: {item_id}")
             return True
         except exceptions.CosmosResourceNotFoundError:
-            print(f"Item with id {item_id} not found. Unable to delete.")
+            print(f"Item with id {item_id} not found.")
             return False
         except exceptions.CosmosHttpResponseError as e:
             print(f"An error occurred during deletion: {e.message}")
             return False
 
-def example_create_item():
+def example_usage():
     cosmos_db = CosmosDBManager()
     new_item = {
         'id': 'item1',
@@ -190,59 +142,10 @@ def example_create_item():
         'age': 30
     }
     created_item = cosmos_db.create_item(new_item)
-    if created_item:
-        print(f"Created item: {created_item}")
-    else:
-        print("Failed to create item. It might already exist.")
-
-def example_update_item():
-    cosmos_db = CosmosDBManager()
-    item_to_update = {
-        'id': 'item1',
-        'partitionKey': 'example_partition',
-        'name': 'John Doe',
-        'age': 31  # Updated age
-    }
-    updated_item = cosmos_db.update_item(item_to_update)
-    if updated_item:
-        print(f"Updated item: {updated_item}")
-    else:
-        print("Failed to update item. It might not exist.")
-
-def example_upsert_item():
-    cosmos_db = CosmosDBManager()
-    item_to_upsert = {
-        'id': 'item2',
-        'partitionKey': 'example_partition',
-        'name': 'Jane Doe',
-        'age': 28
-    }
-    upserted_item = cosmos_db.upsert_item(item_to_upsert)
-    if upserted_item:
-        print(f"Upserted item: {upserted_item}")
-    else:
-        print("Failed to upsert item.")
-
-def example_query_items():
-    cosmos_db = CosmosDBManager()
-    query = "SELECT * FROM c WHERE c.partitionKey = @partitionKey"
-    parameters = [{"name": "@partitionKey", "value": "example_partition"}]
-    items = cosmos_db.query_items(query, parameters)
-    print(f"Queried items: {items}")
-
-def example_delete_item():
-    cosmos_db = CosmosDBManager()
-    if cosmos_db.delete_item('item1', 'example_partition'):
-        print("Item deleted successfully")
-    else:
-        print("Failed to delete item")
+    # Additional example operations can be added here
 
 if __name__ == "__main__":
     try:
-        example_create_item()
-        example_update_item()
-        example_upsert_item()
-        example_query_items()
-        example_delete_item()
+        example_usage()
     except Exception as e:
         print(f"An error occurred: {str(e)}")
