@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// frontend/src/components/AdminDashboard/AdminReviewDialog.tsx
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -15,6 +16,18 @@ interface AdminReviewDialogProps {
     onReject: (id: string, reason: string) => void;
 }
 
+interface ApprovedTags {
+    programming_languages: string[];
+    frameworks: string[];
+    azure_services: {
+        application: string[];
+        data: string[];
+        ai: string[];
+    };
+    design_patterns: string[];
+    industry: string[];
+}
+
 const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
     isOpen,
     onClose,
@@ -24,6 +37,23 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
 }) => {
     const [editedProject, setEditedProject] = useState<Project>({ ...project });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [approvedTags, setApprovedTags] = useState<ApprovedTags | null>(null);
+
+    useEffect(() => {
+        const fetchApprovedTags = async () => {
+            try {
+                const response = await fetch('/api/admin/get_approved_tags');
+                const data = await response.json();
+                setApprovedTags(data);
+            } catch (error) {
+                console.error('Error fetching approved tags:', error);
+            }
+        };
+
+        if (isOpen) {
+            fetchApprovedTags();
+        }
+    }, [isOpen]);
 
     const handleApprove = async () => {
         setIsSubmitting(true);
@@ -71,14 +101,14 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                         <Input
                             value={editedProject.owner || 'anonymous'}
                             onChange={(e) =>
-                            setEditedProject({
-                                ...editedProject,
-                                owner: e.target.value,
-                            })
+                                setEditedProject({
+                                    ...editedProject,
+                                    owner: e.target.value,
+                                })
                             }
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
                         />
-                        </div>
+                    </div>
 
                     <div>
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Name</label>
@@ -120,6 +150,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             })
                         }
                         placeholder="Enter programming languages..."
+                        approvedTags={approvedTags?.programming_languages}
+                        category="programming_languages"
                     />
 
                     <ArrayInput
@@ -132,6 +164,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             })
                         }
                         placeholder="Enter frameworks..."
+                        approvedTags={approvedTags?.frameworks}
+                        category="frameworks"
                     />
 
                     <ArrayInput
@@ -144,6 +178,9 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             })
                         }
                         placeholder="Enter Azure services..."
+                        category="azure_services"
+                        azureServicesData={approvedTags?.azure_services}
+                        azureServiceCategory="application"
                     />
 
                     <ArrayInput
@@ -156,6 +193,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             })
                         }
                         placeholder="Enter design patterns..."
+                        approvedTags={approvedTags?.design_patterns}
+                        category="design_patterns"
                     />
 
                     <ArrayInput
@@ -168,6 +207,8 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                             })
                         }
                         placeholder="Enter industries..."
+                        approvedTags={approvedTags?.industry}
+                        category="industry"
                         multiline={true}
                     />
 

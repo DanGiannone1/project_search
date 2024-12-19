@@ -1,4 +1,3 @@
-// frontend/src/components/AdminDashboard/AdminDashboard.tsx
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Project } from '@/components/ProjectSearch/types';
 import { toast } from 'react-toastify';
 import { toCamelCase } from '@/lib/convertKeys';
 import AdminReviewDialog from './AdminReviewDialog';
+import TagManagementPanel from './TagManagemantPanel';
 
 const AdminDashboard: React.FC = () => {
     const [pendingReviews, setPendingReviews] = useState<Project[]>([]);
@@ -22,7 +22,6 @@ const AdminDashboard: React.FC = () => {
     const fetchPendingReviews = async () => {
         setLoading(true);
         try {
-            console.log('Fetching pending reviews...');
             const response = await fetch('/api/admin/get_pending_reviews', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
@@ -33,11 +32,7 @@ const AdminDashboard: React.FC = () => {
             }
 
             const data = await response.json();
-            console.log('Raw API response:', data);
-
             const camelData = Array.isArray(data) ? toCamelCase(data) : [];
-            console.log('Transformed data:', camelData);
-
             setPendingReviews(camelData);
         } catch (error: any) {
             console.error('Error in fetchPendingReviews:', error);
@@ -107,53 +102,62 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
-    console.log('Current pendingReviews state:', pendingReviews);
-    console.log('Loading state:', loading);
-
     return (
         <div className="p-6 bg-neutral-900 min-h-screen">
-            <h1 className="text-2xl font-bold text-indigo-400 mb-6">Admin Dashboard - Pending Reviews</h1>
-            {loading ? (
-                <div className="flex justify-center items-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 gap-6">
-                    {!pendingReviews || pendingReviews.length === 0 ? (
-                        <p className="text-gray-300">No pending reviews.</p>
+            <h1 className="text-2xl font-bold text-indigo-400 mb-6">Admin Dashboard</h1>
+            
+            <div className="grid grid-cols-2 gap-6">
+                {/* Pending Reviews Panel */}
+                <div>
+                    <h2 className="text-lg font-semibold text-white mb-4">Pending Reviews</h2>
+                    {loading ? (
+                        <div className="flex justify-center items-center">
+                            <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+                        </div>
                     ) : (
-                        pendingReviews.map(project => (
-                            <Card key={project.id} className="bg-neutral-800 border-neutral-700">
-                                <CardContent className="pt-6">
-                                    <CardTitle className="text-white font-semibold text-lg">
-                                        {project.projectName || 'No Name Provided'}
-                                    </CardTitle>
-                                    <div className="flex items-center justify-between mt-2">
-                                        <a
-                                            href={project.githubUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center space-x-2 text-indigo-400 hover:underline"
-                                        >
-                                            <Github className="w-5 h-5" />
-                                            <span>{project.githubUrl}</span>
-                                        </a>
-                                    </div>
-                                    <div className="mt-4">
-                                        <Button
-                                            onClick={() => openReviewDialog(project)}
-                                            variant="accentGradient"
-                                            disabled={actionLoading === project.id}
-                                        >
-                                            Review
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))
+                        <div className="space-y-4">
+                            {!pendingReviews || pendingReviews.length === 0 ? (
+                                <p className="text-gray-300">No pending reviews.</p>
+                            ) : (
+                                pendingReviews.map(project => (
+                                    <Card key={project.id} className="bg-neutral-800 border-neutral-700">
+                                        <CardContent className="pt-6">
+                                            <CardTitle className="text-white font-semibold text-lg">
+                                                {project.projectName || 'No Name Provided'}
+                                            </CardTitle>
+                                            <div className="flex items-center justify-between mt-2">
+                                                <a
+                                                    href={project.githubUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center space-x-2 text-indigo-400 hover:underline"
+                                                >
+                                                    <Github className="w-5 h-5" />
+                                                    <span>{project.githubUrl}</span>
+                                                </a>
+                                            </div>
+                                            <div className="mt-4">
+                                                <Button
+                                                    onClick={() => openReviewDialog(project)}
+                                                    variant="accentGradient"
+                                                    disabled={actionLoading === project.id}
+                                                >
+                                                    Review
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            )}
+                        </div>
                     )}
                 </div>
-            )}
+
+                {/* Tag Management Panel */}
+                <div>
+                    <TagManagementPanel />
+                </div>
+            </div>
 
             {selectedProject && (
                 <AdminReviewDialog

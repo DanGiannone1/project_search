@@ -43,7 +43,7 @@ logger.info(f"User: {user}")
 
 
 COSMOS_DATABASE_ID = "codewith_project_search"
-COSMOS_CONTAINER_ID = "project_container"
+COSMOS_CONTAINER_ID = "project_container_test"
 
 cosmos_db = None
 
@@ -466,6 +466,44 @@ def check_admin():
         print(f"Error checking admin status: {str(e)}")
         return jsonify({"isAdmin": False, "error": str(e)}), 500
 
+# NEW CODE START
+@app.route('/api/admin/get_approved_tags', methods=['GET'])
+def get_approved_tags():
+    try:
+        query = "SELECT * FROM c WHERE c.id = 'approved_tags' AND c.partitionKey = 'metadata'"
+        tags = cosmos_db.query_items(query)
+        if tags:
+            return jsonify(tags[0]), 200
+        else:
+            # If not found, return empty structure
+            empty_tags = {
+                "id": "approved_tags",
+                "partitionKey": "metadata",
+                "programming_languages": [],
+                "frameworks": [],
+                "azure_services": {
+                    "application": [],
+                    "data": [],
+                    "ai": []
+                },
+                "design_patterns": [],
+                "industry": []
+            }
+            return jsonify(empty_tags), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/update_approved_tags', methods=['POST'])
+def update_approved_tags():
+    try:
+        data = request.get_json()
+        # Ensure id and partitionKey are set
+        data["id"] = "approved_tags"
+        data["partitionKey"] = "metadata"
+        cosmos_db.upsert_item(data)
+        return jsonify({"message": "Approved tags updated successfully."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/api/search_projects', methods=['POST'])
