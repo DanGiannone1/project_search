@@ -163,3 +163,4 @@ cython_debug/
 scripts/cosmosrbac.ps1
 scripts/rbac.sh
 scripts/role-definition.json
+backend/approved_tags.json
