@@ -1,5 +1,5 @@
 // frontend/src/components/AdminDashboard/AdminReviewDialog.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -7,14 +7,6 @@ import { Project } from '@/components/ProjectSearch/types';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import ArrayInput from '@/components/ProjectSearch/ArrayInput';
-
-interface AdminReviewDialogProps {
-    isOpen: boolean;
-    onClose: () => void;
-    project: Project;
-    onApprove: (updatedProject: Project) => void;
-    onReject: (id: string, reason: string) => void;
-}
 
 interface ApprovedTags {
     programming_languages: string[];
@@ -28,34 +20,59 @@ interface ApprovedTags {
     industry: string[];
 }
 
+interface AdminReviewDialogProps {
+    isOpen: boolean;
+    onClose: () => void;
+    project: Project;
+    onApprove: (updatedProject: Project) => void;
+    onReject: (id: string, reason: string) => void;
+    approvedTags: ApprovedTags | null;
+}
+
 const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
     isOpen,
     onClose,
     project,
     onApprove,
-    onReject
+    onReject,
+    approvedTags
 }) => {
     const [editedProject, setEditedProject] = useState<Project>({ ...project });
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [approvedTags, setApprovedTags] = useState<ApprovedTags | null>(null);
+    const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
 
-    useEffect(() => {
-        const fetchApprovedTags = async () => {
-            try {
-                const response = await fetch('/api/admin/get_approved_tags');
-                const data = await response.json();
-                setApprovedTags(data);
-            } catch (error) {
-                console.error('Error fetching approved tags:', error);
-            }
-        };
+    const validateProject = (): boolean => {
+        const errors: { [key: string]: string } = {};
 
-        if (isOpen) {
-            fetchApprovedTags();
+        if (!editedProject.projectName?.trim()) {
+            errors.projectName = 'Project name is required';
         }
-    }, [isOpen]);
+
+        if (!editedProject.projectDescription?.trim()) {
+            errors.projectDescription = 'Project description is required';
+        }
+
+        if (!editedProject.businessValue?.trim()) {
+            errors.businessValue = 'Business value is required';
+        }
+
+        if (!editedProject.targetAudience?.trim()) {
+            errors.targetAudience = 'Target audience is required';
+        }
+
+        if (!editedProject.codeComplexity) {
+            errors.codeComplexity = 'Code complexity is required';
+        }
+
+        setValidationErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
 
     const handleApprove = async () => {
+        if (!validateProject()) {
+            return;
+        }
+
         setIsSubmitting(true);
         await onApprove(editedProject);
         setIsSubmitting(false);
@@ -64,9 +81,26 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
     const handleReject = async () => {
         const reason = prompt('Enter rejection reason:');
         if (!reason) return;
+        
         setIsSubmitting(true);
         await onReject(editedProject.id, reason);
         setIsSubmitting(false);
+    };
+
+    const handleInputChange = (field: keyof Project, value: any) => {
+        setEditedProject(prev => ({
+            ...prev,
+            [field]: value
+        }));
+
+        // Clear validation error for the field if it exists
+        if (validationErrors[field]) {
+            setValidationErrors(prev => {
+                const updated = { ...prev };
+                delete updated[field];
+                return updated;
+            });
+        }
     };
 
     const complexityOptions = ['Beginner', 'Intermediate', 'Advanced'];
@@ -85,12 +119,6 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">GitHub URL</label>
                         <Input
                             value={editedProject.githubUrl || ''}
-                            onChange={(e) =>
-                                setEditedProject({
-                                    ...editedProject,
-                                    githubUrl: e.target.value,
-                                })
-                            }
                             className="bg-neutral-800 border-neutral-700 text-white"
                             disabled
                         />
@@ -100,55 +128,49 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">Owner</label>
                         <Input
                             value={editedProject.owner || 'anonymous'}
-                            onChange={(e) =>
-                                setEditedProject({
-                                    ...editedProject,
-                                    owner: e.target.value,
-                                })
-                            }
-                            className="bg-neutral-800 border-neutral-700 text-white h-12"
+                            onChange={(e) => handleInputChange('owner', e.target.value)}
+                            className={`bg-neutral-800 border-neutral-700 text-white h-12`}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Name</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">
+                            Project Name
+                            {validationErrors.projectName && (
+                                <span className="text-red-400 ml-2 text-xs">{validationErrors.projectName}</span>
+                            )}
+                        </label>
                         <Input
                             placeholder="Project Name"
                             value={editedProject.projectName || ''}
-                            onChange={(e) =>
-                                setEditedProject({
-                                    ...editedProject,
-                                    projectName: e.target.value,
-                                })
-                            }
-                            className="bg-neutral-800 border-neutral-700 text-white h-12"
+                            onChange={(e) => handleInputChange('projectName', e.target.value)}
+                            className={`bg-neutral-800 border-neutral-700 text-white h-12 ${
+                                validationErrors.projectName ? 'border-red-500' : ''
+                            }`}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Description</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">
+                            Project Description
+                            {validationErrors.projectDescription && (
+                                <span className="text-red-400 ml-2 text-xs">{validationErrors.projectDescription}</span>
+                            )}
+                        </label>
                         <Textarea
                             placeholder="Project Description"
-                            value={editedProject.projectDescription}
-                            onChange={(e) =>
-                                setEditedProject({
-                                    ...editedProject,
-                                    projectDescription: e.target.value,
-                                })
-                            }
-                            className="bg-neutral-800 border-neutral-700 text-white h-32"
+                            value={editedProject.projectDescription || ''}
+                            onChange={(e) => handleInputChange('projectDescription', e.target.value)}
+                            className={`bg-neutral-800 border-neutral-700 text-white h-32 ${
+                                validationErrors.projectDescription ? 'border-red-500' : ''
+                            }`}
                         />
                     </div>
 
                     <ArrayInput
                         label="Programming Languages"
                         value={editedProject.programmingLanguages || []}
-                        onChange={(value) =>
-                            setEditedProject({
-                                ...editedProject,
-                                programmingLanguages: value,
-                            })
-                        }
+                        onChange={(value) => handleInputChange('programmingLanguages', value)}
                         placeholder="Enter programming languages..."
                         approvedTags={approvedTags?.programming_languages}
                         category="programming_languages"
@@ -157,12 +179,7 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                     <ArrayInput
                         label="Frameworks"
                         value={editedProject.frameworks || []}
-                        onChange={(value) =>
-                            setEditedProject({
-                                ...editedProject,
-                                frameworks: value,
-                            })
-                        }
+                        onChange={(value) => handleInputChange('frameworks', value)}
                         placeholder="Enter frameworks..."
                         approvedTags={approvedTags?.frameworks}
                         category="frameworks"
@@ -171,27 +188,16 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                     <ArrayInput
                         label="Azure Services"
                         value={editedProject.azureServices || []}
-                        onChange={(value) =>
-                            setEditedProject({
-                                ...editedProject,
-                                azureServices: value,
-                            })
-                        }
+                        onChange={(value) => handleInputChange('azureServices', value)}
                         placeholder="Enter Azure services..."
                         category="azure_services"
                         azureServicesData={approvedTags?.azure_services}
-                        azureServiceCategory="application"
                     />
 
                     <ArrayInput
                         label="Design Patterns"
                         value={editedProject.designPatterns || []}
-                        onChange={(value) =>
-                            setEditedProject({
-                                ...editedProject,
-                                designPatterns: value,
-                            })
-                        }
+                        onChange={(value) => handleInputChange('designPatterns', value)}
                         placeholder="Enter design patterns..."
                         approvedTags={approvedTags?.design_patterns}
                         category="design_patterns"
@@ -200,12 +206,7 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                     <ArrayInput
                         label="Industries"
                         value={editedProject.industries || []}
-                        onChange={(value) =>
-                            setEditedProject({
-                                ...editedProject,
-                                industries: value,
-                            })
-                        }
+                        onChange={(value) => handleInputChange('industries', value)}
                         placeholder="Enter industries..."
                         approvedTags={approvedTags?.industry}
                         category="industry"
@@ -217,30 +218,27 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                         <Input
                             placeholder="Project Type"
                             value={editedProject.projectType || ''}
-                            onChange={(e) =>
-                                setEditedProject({
-                                    ...editedProject,
-                                    projectType: e.target.value,
-                                })
-                            }
+                            onChange={(e) => handleInputChange('projectType', e.target.value)}
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Code Complexity</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">
+                            Code Complexity
+                            {validationErrors.codeComplexity && (
+                                <span className="text-red-400 ml-2 text-xs">{validationErrors.codeComplexity}</span>
+                            )}
+                        </label>
                         <div className="flex space-x-2">
                             {complexityOptions.map((option) => (
                                 <Button
                                     key={option}
                                     variant={editedProject.codeComplexity === option ? 'accentGradient' : 'secondary'}
-                                    onClick={() =>
-                                        setEditedProject({
-                                            ...editedProject,
-                                            codeComplexity: option as 'Beginner' | 'Intermediate' | 'Advanced',
-                                        })
-                                    }
-                                    className="flex-1"
+                                    onClick={() => handleInputChange('codeComplexity', option)}
+                                    className={`flex-1 ${
+                                        validationErrors.codeComplexity ? 'border border-red-500' : ''
+                                    }`}
                                 >
                                     {option}
                                 </Button>
@@ -249,32 +247,36 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Business Value</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">
+                            Business Value
+                            {validationErrors.businessValue && (
+                                <span className="text-red-400 ml-2 text-xs">{validationErrors.businessValue}</span>
+                            )}
+                        </label>
                         <Textarea
                             placeholder="Business Value"
-                            value={editedProject.businessValue}
-                            onChange={(e) =>
-                                setEditedProject({
-                                    ...editedProject,
-                                    businessValue: e.target.value,
-                                })
-                            }
-                            className="bg-neutral-800 border-neutral-700 text-white h-32"
+                            value={editedProject.businessValue || ''}
+                            onChange={(e) => handleInputChange('businessValue', e.target.value)}
+                            className={`bg-neutral-800 border-neutral-700 text-white h-32 ${
+                                validationErrors.businessValue ? 'border-red-500' : ''
+                            }`}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold mb-1 text-indigo-400">Target Audience</label>
+                        <label className="block text-sm font-semibold mb-1 text-indigo-400">
+                            Target Audience
+                            {validationErrors.targetAudience && (
+                                <span className="text-red-400 ml-2 text-xs">{validationErrors.targetAudience}</span>
+                            )}
+                        </label>
                         <Textarea
                             placeholder="Target Audience"
-                            value={editedProject.targetAudience}
-                            onChange={(e) =>
-                                setEditedProject({
-                                    ...editedProject,
-                                    targetAudience: e.target.value,
-                                })
-                            }
-                            className="bg-neutral-800 border-neutral-700 text-white h-32"
+                            value={editedProject.targetAudience || ''}
+                            onChange={(e) => handleInputChange('targetAudience', e.target.value)}
+                            className={`bg-neutral-800 border-neutral-700 text-white h-32 ${
+                                validationErrors.targetAudience ? 'border-red-500' : ''
+                            }`}
                         />
                     </div>
 

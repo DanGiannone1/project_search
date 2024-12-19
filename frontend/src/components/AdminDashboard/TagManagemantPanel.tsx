@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+// frontend/src/components/AdminDashboard/TagManagementPanel.tsx
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChevronDown, ChevronRight, Plus, X, Loader2 } from 'lucide-react';
-import { toast } from 'react-toastify';
 
-interface ApprovedTags {
+export interface ApprovedTags {
   programming_languages: string[];
   frameworks: string[];
   azure_services: {
@@ -17,10 +17,12 @@ interface ApprovedTags {
   industry: string[];
 }
 
-const TagManagementPanel = () => {
-  const [tags, setTags] = useState<ApprovedTags | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+export interface TagManagementPanelProps {
+  tags: ApprovedTags | null;
+  onTagsUpdate: (updatedTags: ApprovedTags) => Promise<void>;
+}
+
+const TagManagementPanel = ({ tags, onTagsUpdate }: TagManagementPanelProps) => {
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     programming_languages: true,
     frameworks: true,
@@ -37,42 +39,6 @@ const TagManagementPanel = () => {
     design_patterns: '',
     industry: '',
   });
-
-  useEffect(() => {
-    fetchTags();
-  }, []);
-
-  const fetchTags = async () => {
-    try {
-      const response = await fetch('/api/admin/get_approved_tags');
-      const data = await response.json();
-      setTags(data);
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-      toast.error('Failed to load approved tags');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const saveTags = async () => {
-    if (!tags) return;
-    setSaving(true);
-    try {
-      const response = await fetch('/api/admin/update_approved_tags', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(tags),
-      });
-      if (!response.ok) throw new Error('Failed to update tags');
-      toast.success('Tags updated successfully');
-    } catch (error) {
-      console.error('Error saving tags:', error);
-      toast.error('Failed to save tags');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
@@ -97,11 +63,11 @@ const TagManagementPanel = () => {
       (updatedTags[category as keyof typeof updatedTags] as string[]).push(newTagValue);
     }
 
-    setTags(updatedTags);
     setNewTags(prev => ({
       ...prev,
       [subcategory ? `azure_services.${subcategory}` : category]: '',
     }));
+    onTagsUpdate(updatedTags);
   };
 
   const removeTag = (category: string, tag: string, subcategory?: string) => {
@@ -119,7 +85,7 @@ const TagManagementPanel = () => {
       ).filter(t => t !== tag);
     }
 
-    setTags(updatedTags);
+    onTagsUpdate(updatedTags);
   };
 
   const getCategoryColor = (category: string): string => {
@@ -277,7 +243,7 @@ const TagManagementPanel = () => {
     </div>
   );
 
-  if (loading) {
+  if (!tags) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
@@ -291,31 +257,13 @@ const TagManagementPanel = () => {
         <CardTitle className="text-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-500">
           Manage Approved Tags
         </CardTitle>
-        <Button onClick={saveTags} disabled={saving} variant="accentGradient" size="sm">
-          {saving ? (
-            <div className="flex items-center">
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Saving...
-            </div>
-          ) : (
-            'Save Changes'
-          )}
-        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
-        {tags && (
-          <>
-            {renderTagSection(
-              'Programming Languages',
-              'programming_languages',
-              tags.programming_languages
-            )}
-            {renderTagSection('Frameworks', 'frameworks', tags.frameworks)}
-            {renderAzureServices()}
-            {renderTagSection('Design Patterns', 'design_patterns', tags.design_patterns)}
-            {renderTagSection('Industries', 'industry', tags.industry)}
-          </>
-        )}
+        {renderTagSection('Programming Languages', 'programming_languages', tags.programming_languages)}
+        {renderTagSection('Frameworks', 'frameworks', tags.frameworks)}
+        {renderAzureServices()}
+        {renderTagSection('Design Patterns', 'design_patterns', tags.design_patterns)}
+        {renderTagSection('Industries', 'industry', tags.industry)}
       </CardContent>
     </Card>
   );
