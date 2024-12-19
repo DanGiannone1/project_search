@@ -42,48 +42,76 @@ def generate_embeddings(text, model="text-embedding-ada-002"):  # model = "deplo
     return aoai_client.embeddings.create(input=[text], model=model).data[0].embedding
 
 
-
+def build_filter_string(filters: Dict) -> str:
+    """
+    Build a filter string for Azure Cognitive Search from a dictionary of filters.
+    For array fields, ensures ALL selected values must be present in the results.
+    
+    Args:
+        filters (Dict): Dictionary of filter key-value pairs
+    
+    Returns:
+        str: Complete filter string for Azure Search
+    """
+    filter_conditions = []
+    
+    # Mapping of filter keys to Azure Search field names
+    field_mapping = {
+        'programmingLanguages': 'programming_languages',
+        'frameworks': 'frameworks',
+        'azureServices': 'azure_services',
+        'designPatterns': 'design_patterns',
+        'industries': 'industries',
+        'projectTypes': 'project_type',
+        'codeComplexities': 'code_complexity'
+    }
+    
+    for filter_key, values in filters.items():
+        # Skip empty arrays or None values
+        if not values:
+            continue
+            
+        field_name = field_mapping.get(filter_key)
+        if not field_name:
+            continue
+            
+        if isinstance(values, list):
+            if field_name in ['project_type', 'code_complexity']:
+                # For non-array fields, use simple equality
+                if values:
+                    filter_conditions.append(f"{field_name} eq '{values[0]}'")
+            else:
+                # For array fields, create separate any() condition for each value
+                # This ensures ALL values must be present
+                for value in values:
+                    filter_conditions.append(f"{field_name}/any(item: item eq '{value}')")
+        else:
+            # Handle non-array values
+            filter_conditions.append(f"{field_name} eq '{values}'")
+    
+    # Combine all conditions with AND operator
+    return " and ".join(filter_conditions) if filter_conditions else None
 
 def search_projects(query: str, filters: Dict, sort: str) -> List[Dict]:
-    """
-    Search for projects using both text and vector search in Azure Cognitive Search.
-    """
     try:
         # Generate embeddings for the search query
         query_vector = generate_embeddings(query)
-
-        # Create a vector query for semantic search
+        
+        # Create vector query
         vector_query = VectorizedQuery(
             vector=query_vector,
             k_nearest_neighbors=3,
             fields="description_vector"
         )
-
-        # # Build filter string
-        # filter_clauses = []
-        # for field, values in filters.items():
-        #     if values:
-        #         # Assuming all filter fields are string fields
-        #         filter_clauses.append(f"{field} in ({', '.join([f'\'{v}\'' for v in values])})")
-        # filter_string = ' and '.join(filter_clauses) if filter_clauses else None
-
-        # # Determine sort order
-        # sort_order = None
-        # if sort:
-        #     sort_mapping = {
-        #         'complexity_asc': 'code_complexity_score asc',
-        #         'complexity_desc': 'code_complexity_score desc',
-        #         'reusability_asc': 'reusability_score asc',  # Assuming reusability_score exists
-        #         'reusability_desc': 'reusability_score desc',
-        #     }
-        #     sort_order = sort_mapping.get(sort)
-
-        # Perform hybrid search (both text and vector)
+        
+        # Build the filter string
+        filter_string = build_filter_string(filters)
+        
+        # Use the filter string in the search
         results = search_client.search(
             search_text=query,
             vector_queries=[vector_query],
-            # filter=filter_string,
-            # sort=sort_order,
+            filter=filter_string,  # Add the dynamic filter string here
             select=["id", "project_name", "project_description", "github_url", "owner",
                     "programming_languages", "frameworks", "azure_services",
                     "design_patterns", "project_type", "code_complexity", "industries",

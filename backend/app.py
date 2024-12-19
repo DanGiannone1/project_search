@@ -24,7 +24,7 @@ acs_conn_str = os.getenv("COMMUNICATION_SERVICES_CONNECTION_STRING")
 email_client = EmailClient.from_connection_string(acs_conn_str)
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 logger.info("Logging in via DefaultAzureCredential...")
@@ -37,24 +37,21 @@ except:
     raise Exception("Failed to authenticate via DefaultAzureCredential")        
 
 
-try:
-    user = os.getlogin()
-    logger.info(f"Current user (getlogin): {user}")
-except Exception as e:
-    logger.info(f"Could not get login: {e}")
-
-
+import getpass
+user = getpass.getuser()
+logger.info(f"User: {user}")
 
 
 COSMOS_DATABASE_ID = "codewith_project_search"
 COSMOS_CONTAINER_ID = "project_container"
 
+cosmos_db = None
 
 try:
     logger.info("Initializing CosmosDB connection...")
     cosmos_db = CosmosDBManager(
-        cosmos_database_id=os.environ.get("COSMOS_DATABASE_ID"),
-        cosmos_container_id=os.environ.get("COSMOS_CONTAINER_ID")
+        cosmos_database_id=COSMOS_DATABASE_ID,
+        cosmos_container_id=COSMOS_CONTAINER_ID
     )
     logger.info("CosmosDB connection initialized successfully")
 except Exception as e:
@@ -448,6 +445,28 @@ def reject_project():
     except Exception as e:
         print(f"Error in reject_project: {e}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/check_admin', methods=['GET'])
+def check_admin():
+    try:
+        client_principal = request.headers.get('X-MS-CLIENT-PRINCIPAL')
+        if client_principal:
+            decoded = base64.b64decode(client_principal).decode('utf-8')
+            client_principal = json.loads(decoded)
+            user_identity = get_user_identity(client_principal)
+        else:
+            user_identity = 'anonymous'
+
+        admin_emails = os.getenv("ADMIN_EMAILS", "")
+        admin_list = [email.strip().lower() for email in admin_emails.split(",") if email.strip()]
+
+        is_admin = user_identity.lower() in admin_list
+        return jsonify({"isAdmin": is_admin}), 200
+    except Exception as e:
+        print(f"Error checking admin status: {str(e)}")
+        return jsonify({"isAdmin": False, "error": str(e)}), 500
+
+
 
 @app.route('/api/search_projects', methods=['POST'])
 def search():

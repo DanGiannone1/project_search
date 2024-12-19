@@ -69,11 +69,16 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
                     <div>
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">Owner</label>
                         <Input
-                            value={project.owner || 'anonymous'}
+                            value={editedProject.owner || 'anonymous'}
+                            onChange={(e) =>
+                            setEditedProject({
+                                ...editedProject,
+                                owner: e.target.value,
+                            })
+                            }
                             className="bg-neutral-800 border-neutral-700 text-white h-12"
-                            disabled
                         />
-                    </div>
+                        </div>
 
                     <div>
                         <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Name</label>

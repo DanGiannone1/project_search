@@ -1,16 +1,10 @@
 // frontend/src/components/ProjectSearch/ProjectSearch.tsx
+
 import { useState, useEffect } from 'react';
 import FilterSidebar from './FilterSidebar';
 import SearchCard from './SearchCard';
 import ResultsDisplay from './ResultsDisplay';
-import { Project, Filters, SortOption } from './types';
-
-const sortOptions: SortOption[] = [
-  { value: 'complexity_asc', label: 'Code Complexity: Low to High' },
-  { value: 'complexity_desc', label: 'Code Complexity: High to Low' },
-  { value: 'reusability_asc', label: 'Reusability: Low to High' },
-  { value: 'reusability_desc', label: 'Reusability: High to Low' },
-];
+import { Project, Filters } from './types';
 
 function ProjectSearch() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,10 +18,8 @@ function ProjectSearch() {
     designPatterns: [],
     industries: [],
     projectTypes: [],
-    codeComplexities: [] // NEW
+    codeComplexities: []
   });
-
-  const [selectedSort, setSelectedSort] = useState<string>('');
 
   const [availableOptions, setAvailableOptions] = useState({
     programmingLanguages: [],
@@ -36,7 +28,7 @@ function ProjectSearch() {
     designPatterns: [],
     industries: [],
     projectTypes: [],
-    codeComplexities: [] // NEW
+    codeComplexities: []
   });
 
   useEffect(() => {
@@ -63,7 +55,7 @@ function ProjectSearch() {
         body: JSON.stringify({
           query: searchQuery,
           filters: filters,
-          sort: selectedSort,
+          sort: '' // no sorting now
         }),
       });
 
@@ -82,9 +74,6 @@ function ProjectSearch() {
         <FilterSidebar
           filters={filters}
           setFilters={setFilters}
-          sortOptions={sortOptions}
-          selectedSort={selectedSort}
-          setSelectedSort={setSelectedSort}
           availableOptions={availableOptions}
         />
       </div>

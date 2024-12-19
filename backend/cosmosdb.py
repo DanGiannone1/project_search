@@ -40,9 +40,13 @@ class CosmosDBManager:
         if not resource_endpoint:
             raise ValueError("COSMOS_HOST environment variable is required")
 
-        print("Using DefaultAzureCredential for Cosmos DB authentication")
-        credential = DefaultAzureCredential()
-        return CosmosClient(resource_endpoint, credential=credential)
+        try:
+            print("Using DefaultAzureCredential for Cosmos DB authentication")
+            credential = DefaultAzureCredential()
+            return CosmosClient(resource_endpoint, credential=credential)
+        except Exception as e:
+            print(f"Failed to authenticate with DefaultAzureCredential: {str(e)}")
+            raise
 
     def _initialize_database_and_container(self) -> None:
         try:

@@ -1,13 +1,11 @@
 // frontend/src/components/ProjectSearch/FilterSidebar.tsx
+
 import React from 'react';
-import { Filters, SortOption } from './types';
+import { Filters } from './types';
 
 interface FilterSidebarProps {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
-  sortOptions: SortOption[];
-  selectedSort: string;
-  setSelectedSort: React.Dispatch<React.SetStateAction<string>>;
   availableOptions: {
     programmingLanguages: string[];
     frameworks: string[];
@@ -15,19 +13,16 @@ interface FilterSidebarProps {
     designPatterns: string[];
     industries: string[];
     projectTypes: string[];
-    codeComplexities: string[]; // NEW
+    codeComplexities: string[];
   };
 }
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({
   filters,
   setFilters,
-  sortOptions,
-  selectedSort,
-  setSelectedSort,
   availableOptions
 }) => {
-  
+
   const filterSections = [
     {
       title: 'Programming Language',
@@ -72,7 +67,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         setFilters((prev) => ({ ...prev, projectTypes: vals })),
     },
     {
-      title: 'Code Complexity', // NEW
+      title: 'Code Complexity',
       items: availableOptions.codeComplexities,
       selected: filters.codeComplexities,
       setSelected: (vals: string[]) =>
@@ -95,7 +90,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   return (
     <div className="w-64 h-full bg-neutral-900 border-r border-neutral-800 p-4 overflow-y-auto">
       <h2 className="text-lg font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-violet-500 mb-4">
-        Filters & Sort
+        Filter
       </h2>
 
       <div className="space-y-6 text-sm">
@@ -119,23 +114,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
             </div>
           </div>
         ))}
-
-        {/* Sort Options */}
-        <div>
-          <h3 className="font-semibold mb-2">Sort By</h3>
-          <select
-            className="w-full text-sm bg-neutral-800 border border-neutral-700 rounded-md p-1"
-            value={selectedSort}
-            onChange={(e) => setSelectedSort(e.target.value)}
-          >
-            <option value="">None</option>
-            {sortOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
     </div>
   );
