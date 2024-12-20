@@ -1,9 +1,9 @@
+// frontend/src/components/ProjectSearch/ProjectSearch.tsx
 import { useState, useEffect } from 'react';
 import SearchCard from './SearchCard';
 import ResultsDisplay from './ResultsDisplay';
 import { Project, Filters } from './types';
 import InlineFilterPanel from './InlineFilterPanel';
-
 
 function ProjectSearch() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,12 +30,23 @@ function ProjectSearch() {
     codeComplexities: []
   });
 
+  const [serviceMapping, setServiceMapping] = useState<{
+    [key: string]: string[];
+  }>({
+    'AI & ML': [],
+    'Data': [],
+    'Application': []
+  });
+
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
   useEffect(() => {
     async function fetchFilterOptions() {
       try {
         const res = await fetch('/api/get_filter_options');
+        if (!res.ok) {
+          throw new Error('Failed to fetch filter options');
+        }
         const data = await res.json();
         setAvailableOptions(data);
       } catch (error) {
@@ -44,6 +55,23 @@ function ProjectSearch() {
     }
 
     fetchFilterOptions();
+  }, []);
+
+  useEffect(() => {
+    async function fetchServiceMapping() {
+      try {
+        const res = await fetch('/api/get_service_mapping');
+        if (!res.ok) {
+          throw new Error('Failed to fetch service mapping');
+        }
+        const data = await res.json();
+        setServiceMapping(data);
+      } catch (error) {
+        console.error('Error fetching service mapping:', error);
+      }
+    }
+
+    fetchServiceMapping();
   }, []);
 
   const handleSearch = async () => {
@@ -59,6 +87,10 @@ function ProjectSearch() {
           sort: '' // no sorting now
         }),
       });
+
+      if (!response.ok) {
+        throw new Error('Search request failed');
+      }
 
       const data = await response.json();
       setResults(data.results);
@@ -94,15 +126,16 @@ function ProjectSearch() {
 
       {/* Filter panel and results with full width */}
       <div className="px-6 mt-8">
-      {showFilterPanel && (
-        <div className="animate-in slide-in-from-top-4 duration-200">
-          <InlineFilterPanel
-            filters={filters}
-            setFilters={setFilters}
-            availableOptions={availableOptions}
-          />
-        </div>
-      )}
+        {showFilterPanel && (
+          <div className="animate-in slide-in-from-top-4 duration-200">
+            <InlineFilterPanel
+              filters={filters}
+              setFilters={setFilters}
+              availableOptions={availableOptions}
+              serviceMapping={serviceMapping} // Passed as prop
+            />
+          </div>
+        )}
 
         {results.length > 0 && (
           <div className="mt-8">

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// frontend/src/components/ProjectSearch/InlineFilterPanel.tsx
+import React from 'react';
 import { Filters } from './types';
 import { Code2, Box, Layers, LayoutTemplate, Activity, Cloud, Globe, Filter } from 'lucide-react';
 
@@ -14,14 +15,10 @@ interface InlineFilterPanelProps {
     projectTypes: string[];
     codeComplexities: string[];
   };
+  serviceMapping: {
+    [key: string]: string[];
+  };
 }
-
-interface ServiceMapping {
-    'AI & ML': Array<string>;
-    'Data': Array<string>;
-    'Application': Array<string>;
-    [key: string]: Array<string>; // Add index signature for flexibility
-  }
 
 interface CategoryStyle {
   label: string;
@@ -92,30 +89,9 @@ const categoryStyles: CategoryStylesType = {
 const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
   filters,
   setFilters,
-  availableOptions
+  availableOptions,
+  serviceMapping
 }) => {
-  const [serviceMapping, setServiceMapping] = useState<ServiceMapping>({
-    'AI & ML': [],
-    'Data': [],
-    'Application': []
-  });
-
-  useEffect(() => {
-    const fetchServiceMapping = async () => {
-      try {
-        const response = await fetch('/api/get_service_mapping');
-        if (!response.ok) {
-          throw new Error('Failed to fetch service mapping');
-        }
-        const data = await response.json();
-        setServiceMapping(data);
-      } catch (error) {
-        console.error('Error fetching service mapping:', error);
-      }
-    };
-
-    fetchServiceMapping();
-  }, []);
 
   const topLevelCategories = [
     { key: 'programmingLanguages', items: availableOptions.programmingLanguages },
@@ -214,18 +190,18 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
 
         {/* Azure Services section with dynamic categories */}
         <div className="grid grid-cols-3 gap-12">
-        {Object.entries(serviceMapping).map(([category, services]: [string, Array<string>]) => (
+          {Object.entries(serviceMapping).map(([category, services]: [string, Array<string>]) => (
             <div key={category} className="flex flex-col gap-3">
-                <h4 className="text-xs font-medium text-blue-300 uppercase tracking-wider">
+              <h4 className="text-xs font-medium text-blue-300 uppercase tracking-wider">
                 {category}
-                </h4>
-                <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+              </h4>
+              <div className="flex flex-wrap gap-1.5 min-h-[32px]">
                 {services.map((service: string) => 
-                    renderFilterButton(service, 'azureServices', categoryStyles.azureServices)
+                  renderFilterButton(service, 'azureServices', categoryStyles.azureServices)
                 )}
-                </div>
+              </div>
             </div>
-            ))}
+          ))}
         </div>
       </div>
     </div>
