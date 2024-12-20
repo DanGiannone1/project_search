@@ -1,4 +1,5 @@
 // frontend/src/components/AdminDashboard/TagManagementPanel.tsx
+
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,14 @@ const TagManagementPanel = ({ tags, onTagsUpdate }: TagManagementPanelProps) => 
     industry: '',
   });
 
+  if (!tags) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+      </div>
+    );
+  }
+
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
       ...prev,
@@ -55,12 +64,12 @@ const TagManagementPanel = ({ tags, onTagsUpdate }: TagManagementPanelProps) => 
 
     const updatedTags = { ...tags };
     if (subcategory) {
-      updatedTags.azure_services[subcategory as keyof typeof updatedTags.azure_services] = [
-        ...updatedTags.azure_services[subcategory as keyof typeof updatedTags.azure_services],
+      (updatedTags.azure_services as any)[subcategory] = [
+        ...(updatedTags.azure_services as any)[subcategory],
         newTagValue,
       ];
     } else {
-      (updatedTags[category as keyof typeof updatedTags] as string[]).push(newTagValue);
+      (updatedTags as any)[category].push(newTagValue);
     }
 
     setNewTags(prev => ({
@@ -72,19 +81,14 @@ const TagManagementPanel = ({ tags, onTagsUpdate }: TagManagementPanelProps) => 
 
   const removeTag = (category: string, tag: string, subcategory?: string) => {
     if (!tags) return;
-
     const updatedTags = { ...tags };
     if (subcategory) {
-      updatedTags.azure_services[subcategory as keyof typeof updatedTags.azure_services] =
-        updatedTags.azure_services[subcategory as keyof typeof updatedTags.azure_services].filter(
-          t => t !== tag
-        );
+      (updatedTags.azure_services as any)[subcategory] = (updatedTags.azure_services as any)[subcategory].filter(
+        (t: string) => t !== tag
+      );
     } else {
-      (updatedTags[category as keyof typeof updatedTags] as string[]) = (
-        updatedTags[category as keyof typeof updatedTags] as string[]
-      ).filter(t => t !== tag);
+      (updatedTags as any)[category] = (updatedTags as any)[category].filter((t: string) => t !== tag);
     }
-
     onTagsUpdate(updatedTags);
   };
 
@@ -242,14 +246,6 @@ const TagManagementPanel = ({ tags, onTagsUpdate }: TagManagementPanelProps) => 
       )}
     </div>
   );
-
-  if (!tags) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-      </div>
-    );
-  }
 
   return (
     <Card className="bg-neutral-900 border-neutral-700">
