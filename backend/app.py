@@ -41,9 +41,12 @@ import getpass
 user = getpass.getuser()
 logger.info(f"User: {user}")
 
+# Load environment variables from .env file
+load_dotenv()
+
 
 COSMOS_DATABASE_ID = "codewith_project_search"
-COSMOS_CONTAINER_ID = "project_container_test"
+COSMOS_CONTAINER_ID = "project_container"
 
 cosmos_db = None
 
@@ -60,8 +63,7 @@ except Exception as e:
 app = Flask(__name__, static_folder='dist', static_url_path='')
 CORS(app)  # Enable CORS
 
-# Load environment variables from .env file
-load_dotenv()
+
 
 
 
@@ -505,6 +507,36 @@ def update_approved_tags():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/get_service_mapping', methods=['GET'])
+def get_service_mapping():
+    try:
+        query = "SELECT * FROM c WHERE c.id = 'service_mapping' AND c.partitionKey = 'metadata'"
+        results = cosmos_db.query_items(query)
+        
+        mapping_data = list(results)
+        if not mapping_data:
+            return jsonify({"error": "Service mapping not found"}), 404
+            
+        # Get the mapping from the first result
+        service_mapping = mapping_data[0].get('mapping', {})
+        
+        # Create categorized structure
+        categorized_services = {
+            "AI & ML": [],
+            "Data": [],
+            "Application": []
+        }
+        
+        # Categorize services
+        for service, category in service_mapping.items():
+            if category in categorized_services:
+                categorized_services[category].append(service)
+        
+        return jsonify(categorized_services), 200
+        
+    except Exception as e:
+        print(f"Error fetching service mapping: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/search_projects', methods=['POST'])
 def search():

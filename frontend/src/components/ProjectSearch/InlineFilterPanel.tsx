@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Filters } from './types';
 import { Code2, Box, Layers, LayoutTemplate, Activity, Cloud, Globe, Filter } from 'lucide-react';
 
@@ -16,54 +16,76 @@ interface InlineFilterPanelProps {
   };
 }
 
-// Each category matches the icon, color, and label as displayed in the ResultsDisplay project card
-const categoryStyles: Record<string, {
+interface ServiceMapping {
+    'AI & ML': Array<string>;
+    'Data': Array<string>;
+    'Application': Array<string>;
+    [key: string]: Array<string>; // Add index signature for flexibility
+  }
+
+interface CategoryStyle {
   label: string;
   headerColor: string;
   icon: JSX.Element;
   selectedBg: string;
-}> = {
+  bgHover: string;
+  subHeaderColor?: string;
+}
+
+type CategoryStylesType = {
+  [K in keyof Filters]: CategoryStyle;
+};
+
+const categoryStyles: CategoryStylesType = {
   programmingLanguages: {
     label: 'Programming Languages',
     headerColor: 'text-red-400',
     icon: <Code2 className="w-4 h-4" />,
     selectedBg: 'bg-red-900/50 text-gray-300',
+    bgHover: 'hover:bg-red-900/30'
   },
   frameworks: {
     label: 'Frameworks',
     headerColor: 'text-green-400',
     icon: <Box className="w-4 h-4" />,
     selectedBg: 'bg-green-900/50 text-gray-300',
+    bgHover: 'hover:bg-green-900/30'
   },
   azureServices: {
     label: 'Azure Services',
     headerColor: 'text-blue-400',
     icon: <Cloud className="w-4 h-4" />,
     selectedBg: 'bg-blue-900/50 text-gray-300',
+    bgHover: 'hover:bg-blue-900/30',
+    subHeaderColor: 'text-blue-300'
   },
   designPatterns: {
     label: 'Design Patterns',
     headerColor: 'text-yellow-400',
     icon: <LayoutTemplate className="w-4 h-4" />,
     selectedBg: 'bg-yellow-900/50 text-gray-300',
+    bgHover: 'hover:bg-yellow-900/30'
   },
   projectTypes: {
     label: 'Project Type',
     headerColor: 'text-cyan-400',
     icon: <Layers className="w-4 h-4" />,
     selectedBg: 'bg-cyan-900/50 text-gray-300',
+    bgHover: 'hover:bg-cyan-900/30'
   },
   codeComplexities: {
     label: 'Code Complexity',
     headerColor: 'text-orange-400',
     icon: <Activity className="w-4 h-4" />,
     selectedBg: 'bg-orange-800/60 text-gray-200',
+    bgHover: 'hover:bg-orange-900/30'
   },
   industries: {
     label: 'Industries',
     headerColor: 'text-pink-400',
     icon: <Globe className="w-4 h-4" />,
     selectedBg: 'bg-pink-900/50 text-gray-300',
+    bgHover: 'hover:bg-pink-900/30'
   },
 };
 
@@ -72,14 +94,35 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
   setFilters,
   availableOptions
 }) => {
-  // Categories in same order as project cards
-  const categories = [
+  const [serviceMapping, setServiceMapping] = useState<ServiceMapping>({
+    'AI & ML': [],
+    'Data': [],
+    'Application': []
+  });
+
+  useEffect(() => {
+    const fetchServiceMapping = async () => {
+      try {
+        const response = await fetch('/api/get_service_mapping');
+        if (!response.ok) {
+          throw new Error('Failed to fetch service mapping');
+        }
+        const data = await response.json();
+        setServiceMapping(data);
+      } catch (error) {
+        console.error('Error fetching service mapping:', error);
+      }
+    };
+
+    fetchServiceMapping();
+  }, []);
+
+  const topLevelCategories = [
     { key: 'programmingLanguages', items: availableOptions.programmingLanguages },
     { key: 'frameworks', items: availableOptions.frameworks },
     { key: 'projectTypes', items: availableOptions.projectTypes },
     { key: 'designPatterns', items: availableOptions.designPatterns },
     { key: 'codeComplexities', items: availableOptions.codeComplexities },
-    { key: 'azureServices', items: availableOptions.azureServices },
     { key: 'industries', items: availableOptions.industries },
   ];
 
@@ -102,6 +145,22 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
 
   const activeFilterCount = Object.values(filters).reduce((acc, curr) => acc + curr.length, 0);
 
+  const renderFilterButton = (item: string, key: keyof Filters, style: CategoryStyle) => {
+    const isSelected = filters[key].includes(item);
+    const unselectedClass = 'bg-neutral-800/80 text-gray-400';
+    const appliedClass = isSelected ? style.selectedBg : unselectedClass;
+    
+    return (
+      <button
+        key={item}
+        onClick={() => toggleFilter(key, item)}
+        className={`${appliedClass} ${!isSelected && style.bgHover} px-2 py-1 rounded-md text-xs transition-all duration-150 hover:opacity-90 focus:ring-0 focus-visible:ring-0 focus:outline-none focus-visible:outline-none`}
+      >
+        {item}
+      </button>
+    );
+  };
+
   return (
     <div className="relative">
       {/* Floating header */}
@@ -116,40 +175,57 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
       </div>
 
       {/* Main filter panel */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 mb-4">
-        <div className="flex flex-wrap items-start gap-8">
-          {categories.map(({ key, items }) => {
-            const style = categoryStyles[key];
-
+      <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-4">
+        {/* Top level categories */}
+        <div className="grid grid-cols-3 gap-x-12 gap-y-8 mb-8">
+          {topLevelCategories.map(({ key, items }) => {
+            const style = categoryStyles[key as keyof Filters];
             return (
-              <div key={key} className="flex flex-col gap-2 min-w-[200px]">
-                <h3 className={`text-sm font-semibold flex items-center gap-1 ${style.headerColor}`}>
+              <div key={key} className="flex flex-col gap-3">
+                <h3 className={`text-sm font-semibold flex items-center gap-1.5 ${style.headerColor}`}>
                   {style.icon}
                   <span>{style.label}</span>
                 </h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 min-h-[32px]">
                   {items.length > 0 ? (
-                    items.map(item => {
-                      const isSelected = filters[key as keyof Filters].includes(item);
-                      const unselectedClass = 'bg-neutral-800 text-gray-400';
-                      const appliedClass = isSelected ? style.selectedBg : unselectedClass;
-                      return (
-                        <button
-                          key={item}
-                          onClick={() => toggleFilter(key as keyof Filters, item)}
-                          className={`${appliedClass} px-2 py-1 rounded-md text-xs hover:opacity-80 transition-opacity focus:ring-0 focus-visible:ring-0 focus:outline-none focus-visible:outline-none`}
-                        >
-                          {item}
-                        </button>
-                      );
-                    })
+                    items.map(item => renderFilterButton(item, key as keyof Filters, style))
                   ) : (
-                    <span className="px-2 py-1 bg-neutral-800/50 text-gray-500 text-xs rounded-md">No options available</span>
+                    <span className="px-2 py-1 bg-neutral-800/50 text-gray-500 text-xs rounded-md">
+                      No options available
+                    </span>
                   )}
                 </div>
               </div>
             );
           })}
+        </div>
+
+        {/* Divider with label */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-neutral-800"></div>
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-neutral-900 px-4 text-sm font-medium text-blue-400">
+              Azure Services
+            </span>
+          </div>
+        </div>
+
+        {/* Azure Services section with dynamic categories */}
+        <div className="grid grid-cols-3 gap-12">
+        {Object.entries(serviceMapping).map(([category, services]: [string, Array<string>]) => (
+            <div key={category} className="flex flex-col gap-3">
+                <h4 className="text-xs font-medium text-blue-300 uppercase tracking-wider">
+                {category}
+                </h4>
+                <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+                {services.map((service: string) => 
+                    renderFilterButton(service, 'azureServices', categoryStyles.azureServices)
+                )}
+                </div>
+            </div>
+            ))}
         </div>
       </div>
     </div>

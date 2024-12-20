@@ -10,14 +10,14 @@ interface ResultsDisplayProps {
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
     return (
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1800px] mx-auto">
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-12 max-w-[1600px] mx-auto px-8">
             {results.map((result) => (
                 <Card 
                     key={result.id} 
                     className="bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition-all hover:shadow-lg rounded-xl overflow-hidden"
                     style={{ transition: 'transform 0.2s ease, box-shadow 0.2s ease' }}
                 >
-                    <CardContent className="p-8 space-y-6">
+                    <CardContent className="p-10 space-y-6">
                         {/* Header Section */}
                         <div className="flex justify-between items-start gap-4">
                             <div className="min-w-0 flex-1">

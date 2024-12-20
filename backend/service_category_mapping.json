@@ -1,0 +1,18 @@
+{
+    "Azure App Service": "application",
+    "Azure Function": "application",
+    "Azure Container Apps": "application",
+    "Azure API Management": "application",
+    "Azure Cosmos DB": "data",
+    "Azure PostgreSQL": "data",
+    "Azure SQL": "data",
+    "Fabric SQL DB": "data",
+    "Fabric Lakehouse": "data",
+    "Fabric Warehouse": "data",
+    "Azure AI Search": "data",
+    "Azure Data Lake Storage": "data",
+    "Azure AI Foundry": "ai",
+    "Azure Document Intelligence": "ai",
+    "Fabric Data Science": "ai",
+    "Fabric AI Skill": "ai"
+}
