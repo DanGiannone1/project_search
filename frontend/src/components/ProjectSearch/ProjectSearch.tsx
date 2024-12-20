@@ -1,10 +1,9 @@
-// frontend/src/components/ProjectSearch/ProjectSearch.tsx
-
 import { useState, useEffect } from 'react';
-import FilterSidebar from './FilterSidebar';
 import SearchCard from './SearchCard';
 import ResultsDisplay from './ResultsDisplay';
 import { Project, Filters } from './types';
+import InlineFilterPanel from './InlineFilterPanel';
+
 
 function ProjectSearch() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +29,8 @@ function ProjectSearch() {
     projectTypes: [],
     codeComplexities: []
   });
+
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
 
   useEffect(() => {
     async function fetchFilterOptions() {
@@ -69,32 +70,45 @@ function ProjectSearch() {
   };
 
   return (
-    <div className="w-screen h-screen flex bg-transparent text-white overflow-hidden">
-      <div className="h-screen flex-shrink-0">
-        <FilterSidebar
-          filters={filters}
-          setFilters={setFilters}
-          availableOptions={availableOptions}
-        />
-      </div>
-      <div className="flex-1 overflow-y-auto pt-16">
-        <div className="px-6 py-8">
-          <div className="text-center space-y-4 mb-8">
-            <h1 className="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-500">
-              Project Search
-            </h1>
-            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-              Discover similar projects using natural language search powered by AI
-            </p>
-          </div>
+    <div className="w-screen min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
+      {/* Header section with fixed width */}
+      <div className="flex flex-col items-center pt-16 px-6">
+        <h1 className="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-500 mb-4">
+          Project Search
+        </h1>
+        <p className="text-lg text-gray-300 max-w-2xl text-center mb-8">
+          Discover similar projects using natural language search powered by AI
+        </p>
+
+        <div className="max-w-4xl w-full">
           <SearchCard
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             handleSearch={handleSearch}
             isSearching={isSearching}
+            showFilters={showFilterPanel}
+            onToggleFilters={() => setShowFilterPanel(!showFilterPanel)}
           />
-          {results.length > 0 && <ResultsDisplay results={results} />}
         </div>
+      </div>
+
+      {/* Filter panel and results with full width */}
+      <div className="px-6 mt-8">
+      {showFilterPanel && (
+        <div className="animate-in slide-in-from-top-4 duration-200">
+          <InlineFilterPanel
+            filters={filters}
+            setFilters={setFilters}
+            availableOptions={availableOptions}
+          />
+        </div>
+      )}
+
+        {results.length > 0 && (
+          <div className="mt-8">
+            <ResultsDisplay results={results} />
+          </div>
+        )}
       </div>
     </div>
   );

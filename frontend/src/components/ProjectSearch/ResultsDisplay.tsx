@@ -10,7 +10,7 @@ interface ResultsDisplayProps {
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
     return (
-        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1800px] mx-auto">
             {results.map((result) => (
                 <Card 
                     key={result.id} 
