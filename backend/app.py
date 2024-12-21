@@ -421,7 +421,7 @@ def get_filter_options():
             "projectTypes": sorted(project_types),
             "codeComplexities": ["Beginner", "Intermediate", "Advanced"]
         }
-        print(json.dumps(data, indent=2))
+        
 
         return jsonify(data), 200
 

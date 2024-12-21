@@ -1,238 +1,228 @@
-// File: src/components/AdminDashboard/TagManagement.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, X } from 'lucide-react';
-import { Code2, Box, Layers, LayoutTemplate, Cloud, Globe } from 'lucide-react';
+import { Code2, Box, LayoutTemplate, Globe, Layers, Cloud } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { ApprovedTags } from '../ProjectSearch/types';
 
+/**
+ * Props:
+ *   - approvedTags: The combined data from the server, already in the shape of
+ *     { azureServices: [...], azureServiceCategories: { service: category }, etc. }
+ *   - onUpdateTags: Called with the final updated object when user clicks “Save All Changes.”
+ */
 interface TagManagementProps {
   approvedTags: ApprovedTags;
   onUpdateTags: (newTags: ApprovedTags) => Promise<void>;
 }
 
+// We define “regular” categories that are just arrays of strings
 const regularCategories = [
-  { 
-    key: 'programmingLanguages', 
-    label: 'Programming Languages', 
+  {
+    key: 'programmingLanguages',
+    label: 'Programming Languages',
     color: 'text-red-400',
     bgColor: 'bg-red-900/50',
-    icon: Code2 
+    icon: Code2,
   },
-  { 
-    key: 'frameworks', 
-    label: 'Frameworks', 
+  {
+    key: 'frameworks',
+    label: 'Frameworks',
     color: 'text-green-400',
     bgColor: 'bg-green-900/50',
-    icon: Box 
+    icon: Box,
   },
-  { 
-    key: 'designPatterns', 
-    label: 'Design Patterns', 
+  {
+    key: 'designPatterns',
+    label: 'Design Patterns',
     color: 'text-yellow-400',
     bgColor: 'bg-yellow-900/50',
-    icon: LayoutTemplate 
+    icon: LayoutTemplate,
   },
-  { 
-    key: 'industries', 
-    label: 'Industries', 
+  {
+    key: 'industries',
+    label: 'Industries',
     color: 'text-pink-400',
     bgColor: 'bg-pink-900/50',
-    icon: Globe 
+    icon: Globe,
   },
-  { 
-    key: 'projectTypes', 
-    label: 'Project Types', 
+  {
+    key: 'projectTypes',
+    label: 'Project Types',
     color: 'text-cyan-400',
     bgColor: 'bg-cyan-900/50',
-    icon: Layers 
-  }
+    icon: Layers,
+  },
 ];
 
-// Predefined Azure service categories
-const azureCategories = ['AI', 'Data', 'Application'];
-
-interface CategorySectionProps {
-  category: {
-    key: string;
-    label: string;
-    color: string;
-    bgColor: string;
-    icon: React.ComponentType<{className?: string}>;
-  };
-  newTagValue: string;
-  onNewTagValueChange: (val: string) => void;
-  editingTags: {[key: string]: string[]};
-  onAddTag: (categoryKey: string) => void;
-  onRemoveTag: (categoryKey: string, tag: string) => void;
-}
-
-const CategorySection: React.FC<CategorySectionProps> = ({
-  category,
-  newTagValue,
-  onNewTagValueChange,
-  editingTags,
-  onAddTag,
-  onRemoveTag
-}) => {
-  const Icon = category.icon;
-  return (
-    <div className="space-y-4">
-      <h3 className={`font-medium ${category.color} flex items-center gap-2`}>
-        <Icon className="w-4 h-4" />
-        {category.label}
-        <span className="text-gray-400 text-sm">
-          {editingTags[category.key]?.length || 0} tags
-        </span>
-      </h3>
-
-      <div className="flex gap-2">
-        <Input
-          value={newTagValue}
-          onChange={(e) => onNewTagValueChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              onAddTag(category.key);
-            }
-          }}
-          placeholder="Add new tag..."
-          className="bg-neutral-800 border-neutral-700 text-white"
-        />
-        <Button
-          onClick={() => onAddTag(category.key)}
-          variant="secondary"
-          size="icon"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap gap-1.5">
-        {editingTags[category.key]?.map((tag) => (
-          <div
-            key={tag}
-            className={`flex items-center gap-2 px-2 py-1 ${category.bgColor} rounded-md group`}
-          >
-            <span className="text-gray-200 text-sm">{tag}</span>
-            <button
-              onClick={() => onRemoveTag(category.key, tag)}
-              className="text-gray-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+// Potential categories for Azure services
+const azureCategories = ['none', 'AI', 'Data', 'Application'];
 
 const TagManagement: React.FC<TagManagementProps> = ({ approvedTags, onUpdateTags }) => {
-  const allCategories = [...regularCategories, { key: 'azureServices' }];
-
-  // Initialize editing tags for all categories
-  const [editingTags, setEditingTags] = useState<{ [key: string]: string[] }>(() => {
-    const initialTags: { [key: string]: string[] } = {};
-    allCategories.forEach(category => {
-      const key = category.key;
-      if (Array.isArray(approvedTags[key as keyof ApprovedTags])) {
-        initialTags[key] = [...(approvedTags[key as keyof ApprovedTags] as string[])];
-      } else {
-        initialTags[key] = [];
-      }
-    });
-    return initialTags;
-  });
+  /**
+   * We keep local state for each array of tags (like programmingLanguages, frameworks, azureServices).
+   * “editingTags” is an object: { programmingLanguages: [...], frameworks: [...], azureServices: [...], ... }
+   */
+  const [editingTags, setEditingTags] = useState<{ [key: string]: string[] }>({});
   
-  const [newTags, setNewTags] = useState<{ [key: string]: string }>(() => {
-    const initialNewTags: { [key: string]: string } = {};
-    allCategories.forEach(category => {
-      initialNewTags[category.key] = '';
-    });
-    return initialNewTags;
-  });
+  /**
+   * A separate local state for the dictionary of { serviceName -> category }, so
+   * azureServiceCategories["Azure AI Search"] = "Data", for example.
+   */
+  const [azureServiceCategories, setAzureServiceCategories] = useState<{ [service: string]: string }>({});
 
-  // Azure service mapping state
-  const [azureServiceCategories, setAzureServiceMapping] = useState<{ [service: string]: string }>(
-    () => ({ ...approvedTags.azureServiceCategories })
-  );
-
-  // For adding a new azure service with category selection
-  const [newAzureServiceCategory, setNewAzureServiceCategory] = useState(azureCategories[0]);
+  /**
+   * For each category, we track a “new tag input” so user can type a new tag
+   * before adding it (by pressing Enter or clicking +).
+   */
+  const [newTags, setNewTags] = useState<{ [key: string]: string }>({});
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // -------------------------------
+  // Initialize from approvedTags
+  // -------------------------------
+  useEffect(() => {
+    // Build a fresh “editingTags” object for the regular categories + azureServices
+    const nextEditing: { [key: string]: string[] } = {};
+
+    // 1) Copy regular categories
+    regularCategories.forEach(cat => {
+      const key = cat.key as keyof ApprovedTags;
+      nextEditing[cat.key] = Array.isArray(approvedTags[key])
+        ? [...(approvedTags[key] as string[])]
+        : [];
+    });
+
+    // 2) Copy azureServices array
+    if (Array.isArray(approvedTags.azureServices)) {
+      nextEditing['azureServices'] = [...approvedTags.azureServices];
+    } else {
+      nextEditing['azureServices'] = [];
+    }
+
+    setEditingTags(nextEditing);
+
+    // 3) The dictionary of { serviceName -> category }
+    if (approvedTags.azureServiceCategories) {
+      setAzureServiceCategories({ ...approvedTags.azureServiceCategories });
+    } else {
+      setAzureServiceCategories({});
+    }
+
+    // 4) Initialize all new-tag inputs to ''
+    const blank: { [key: string]: string } = {};
+    regularCategories.forEach(cat => {
+      blank[cat.key] = '';
+    });
+    blank['azureServices'] = '';
+    setNewTags(blank);
+  }, [approvedTags]);
+
+  // ------------------------------------------------------
+  // Functions for adding/removing in “regular” categories
+  // ------------------------------------------------------
   const handleAddTag = (category: string) => {
-    const tagValue = newTags[category].trim();
-    if (!tagValue) return;
-    
-    if (editingTags[category].includes(tagValue)) {
+    const val = newTags[category].trim();
+    if (!val) return;
+
+    if (editingTags[category].includes(val)) {
       toast.error('Tag already exists');
       return;
     }
-    
+
     setEditingTags(prev => ({
       ...prev,
-      [category]: [...prev[category], tagValue]
+      [category]: [...prev[category], val],
     }));
 
-    // If we are adding an azure service, also update its mapping
-    if (category === 'azureServices') {
-      setAzureServiceMapping(prev => ({
-        ...prev,
-        [tagValue]: newAzureServiceCategory
-      }));
-    }
-
-    setNewTags(prev => ({
-      ...prev,
-      [category]: ''
-    }));
+    // Clear the input
+    setNewTags(prev => ({ ...prev, [category]: '' }));
   };
 
   const handleRemoveTag = (category: string, tag: string) => {
     setEditingTags(prev => ({
       ...prev,
-      [category]: prev[category].filter(t => t !== tag)
+      [category]: prev[category].filter(t => t !== tag),
     }));
+  };
 
-    // If removing an azure service, remove from mapping too
-    if (category === 'azureServices') {
-      setAzureServiceMapping(prev => {
-        const updated = { ...prev };
-        delete updated[tag];
-        return updated;
-      });
+  // ------------------------------------------------------
+  // Functions for Azure services
+  // ------------------------------------------------------
+  const handleAddAzureService = () => {
+    const svc = newTags['azureServices'].trim();
+    if (!svc) return;
+
+    if (editingTags['azureServices'].includes(svc)) {
+      toast.error('Azure service already exists');
+      return;
     }
+
+    // By default, new service gets the first category in the azureCategories array
+    const defaultCategory = azureCategories[0];
+
+    setEditingTags(prev => ({
+      ...prev,
+      azureServices: [...prev.azureServices, svc],
+    }));
+    setAzureServiceCategories(prev => ({
+      ...prev,
+      [svc]: defaultCategory,
+    }));
+
+    // Clear the input
+    setNewTags(prev => ({ ...prev, azureServices: '' }));
   };
 
-  const handleChangeAzureServiceCategory = (service: string, category: string) => {
-    setAzureServiceMapping(prev => ({
+  const handleRemoveAzureService = (svc: string) => {
+    setEditingTags(prev => ({
       ...prev,
-      [service]: category
+      azureServices: prev.azureServices.filter(s => s !== svc),
+    }));
+    setAzureServiceCategories(prev => {
+      const updated = { ...prev };
+      delete updated[svc];
+      return updated;
+    });
+  };
+
+  const handleChangeAzureServiceCategory = (svc: string, category: string) => {
+    setAzureServiceCategories(prev => ({
+      ...prev,
+      [svc]: category,
     }));
   };
 
+  // ------------------------------------------------------
+  // Save: Merge everything & pass to the parent
+  // ------------------------------------------------------
   const handleSave = async () => {
     setIsSubmitting(true);
     try {
-      await onUpdateTags({ 
-        ...approvedTags, 
-        ...editingTags,
-        azureServiceCategories // Include the updated azure service mapping
-      });
-      toast.success('Tags updated successfully');
-    } catch (error) {
-      console.error('Error updating tags:', error);
-      toast.error('Failed to update tags');
+      // Build a new ApprovedTags object. We keep the old data, but override each array from editingTags,
+      // plus override the azureServiceCategories dictionary.
+      const merged: ApprovedTags = {
+        ...approvedTags,
+        ...editingTags, // merges arrays like frameworks, designPatterns, azureServices, etc.
+        azureServiceCategories, // merges the updated dictionary
+      };
+
+      await onUpdateTags(merged);
+      toast.success('Tags updated successfully!');
+    } catch (err) {
+      console.error('Error updating tags:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to update tags');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // ------------------------------------------------------
+  // Render
+  // ------------------------------------------------------
   return (
     <Card className="bg-neutral-900 border-neutral-700">
       <div className="flex items-center justify-between p-4 border-b border-neutral-800">
@@ -248,22 +238,67 @@ const TagManagement: React.FC<TagManagementProps> = ({ approvedTags, onUpdateTag
       </div>
 
       <CardContent className="space-y-8">
-        {/* Regular Categories */}
+        {/* 1) Regular Categories */}
         <div className="space-y-8">
-          {regularCategories.map((category) => (
-            <CategorySection
-              key={category.key}
-              category={category}
-              newTagValue={newTags[category.key]}
-              onNewTagValueChange={(val) => setNewTags(prev => ({ ...prev, [category.key]: val }))}
-              editingTags={editingTags}
-              onAddTag={handleAddTag}
-              onRemoveTag={handleRemoveTag}
-            />
-          ))}
+          {regularCategories.map(cat => {
+            const Icon = cat.icon;
+            const catKey = cat.key;
+            const labelCount = editingTags[catKey]?.length || 0;
+
+            return (
+              <div key={catKey} className="space-y-4">
+                <h3 className={`font-medium ${cat.color} flex items-center gap-2`}>
+                  <Icon className="w-4 h-4" />
+                  {cat.label}
+                  <span className="text-gray-400 text-sm">{labelCount} tags</span>
+                </h3>
+
+                <div className="flex gap-2">
+                  <Input
+                    value={newTags[catKey] || ''}
+                    onChange={(e) =>
+                      setNewTags(prev => ({ ...prev, [catKey]: e.target.value }))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddTag(catKey);
+                      }
+                    }}
+                    placeholder={`Add a ${cat.label}...`}
+                    className="bg-neutral-800 border-neutral-700 text-white"
+                  />
+                  <Button
+                    onClick={() => handleAddTag(catKey)}
+                    variant="secondary"
+                    size="icon"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {editingTags[catKey]?.map(tag => (
+                    <div
+                      key={tag}
+                      className={`flex items-center gap-2 px-2 py-1 ${cat.bgColor} rounded-md group`}
+                    >
+                      <span className="text-gray-200 text-sm">{tag}</span>
+                      <button
+                        onClick={() => handleRemoveTag(catKey, tag)}
+                        className="text-gray-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Azure Services Section */}
+        {/* 2) Azure Services Section */}
         <div className="space-y-6">
           <h3 className="text-blue-400 font-medium flex items-center gap-2">
             <Cloud className="w-4 h-4" />
@@ -273,34 +308,24 @@ const TagManagement: React.FC<TagManagementProps> = ({ approvedTags, onUpdateTag
             </span>
           </h3>
 
+          {/* Input row for adding a new Azure service */}
           <div className="flex gap-2 items-center">
             <Input
-              value={newTags['azureServices']}
-              onChange={(e) => {
-                setNewTags(prev => ({ ...prev, azureServices: e.target.value }));
-              }}
+              value={newTags['azureServices'] || ''}
+              onChange={(e) =>
+                setNewTags(prev => ({ ...prev, azureServices: e.target.value }))
+              }
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  handleAddTag('azureServices');
+                  handleAddAzureService();
                 }
               }}
               placeholder="Add new Azure service..."
               className="bg-neutral-800 border-neutral-700 text-white"
             />
-
-            <select
-              value={newAzureServiceCategory}
-              onChange={(e) => setNewAzureServiceCategory(e.target.value)}
-              className="bg-neutral-800 border border-neutral-700 text-white px-2 py-1 rounded"
-            >
-              {azureCategories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-
             <Button
-              onClick={() => handleAddTag('azureServices')}
+              onClick={handleAddAzureService}
               variant="secondary"
               size="icon"
             >
@@ -308,6 +333,7 @@ const TagManagement: React.FC<TagManagementProps> = ({ approvedTags, onUpdateTag
             </Button>
           </div>
 
+          {/* Existing Azure services */}
           <div className="space-y-2">
             {editingTags['azureServices']?.map((service) => (
               <div
@@ -317,15 +343,19 @@ const TagManagement: React.FC<TagManagementProps> = ({ approvedTags, onUpdateTag
                 <span className="text-gray-200 text-sm">{service}</span>
                 <select
                   value={azureServiceCategories[service] || azureCategories[0]}
-                  onChange={(e) => handleChangeAzureServiceCategory(service, e.target.value)}
+                  onChange={(e) =>
+                    handleChangeAzureServiceCategory(service, e.target.value)
+                  }
                   className="bg-neutral-800 border border-neutral-700 text-white px-2 py-1 rounded"
                 >
                   {azureCategories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
                   ))}
                 </select>
                 <button
-                  onClick={() => handleRemoveTag('azureServices', service)}
+                  onClick={() => handleRemoveAzureService(service)}
                   className="text-gray-400 hover:text-red-400 transition-colors"
                 >
                   <X className="h-4 w-4" />
