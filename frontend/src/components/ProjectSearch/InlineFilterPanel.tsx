@@ -1,23 +1,11 @@
-// frontend/src/components/ProjectSearch/InlineFilterPanel.tsx
 import React from 'react';
-import { Filters } from './types';
+import { Filters, AvailableOptions } from './types';
 import { Code2, Box, Layers, LayoutTemplate, Activity, Cloud, Globe, Filter } from 'lucide-react';
 
 interface InlineFilterPanelProps {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
-  availableOptions: {
-    programmingLanguages: string[];
-    frameworks: string[];
-    azureServices: string[];
-    designPatterns: string[];
-    industries: string[];
-    projectTypes: string[];
-    codeComplexities: string[];
-  };
-  serviceMapping: {
-    [key: string]: string[];
-  };
+  availableOptions: AvailableOptions;
 }
 
 interface CategoryStyle {
@@ -89,9 +77,31 @@ const categoryStyles: CategoryStylesType = {
 const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
   filters,
   setFilters,
-  availableOptions,
-  serviceMapping
+  availableOptions
 }) => {
+  // Group Azure services by category for display
+  const groupedAzureServices = React.useMemo(() => {
+    const grouped: { [category: string]: string[] } = {
+      'AI': [],
+      'Data': [],
+      'Application': []
+    };
+    
+    // For each service, look up its category and add it to the appropriate group
+    availableOptions.azureServices.forEach(service => {
+      const category = availableOptions.azureServiceCategories[service];
+      if (category && grouped[category]) {
+        grouped[category].push(service);
+      }
+    });
+
+    // Sort services within each category
+    Object.keys(grouped).forEach(category => {
+      grouped[category].sort();
+    });
+
+    return grouped;
+  }, [availableOptions.azureServices, availableOptions.azureServiceCategories]);
 
   const topLevelCategories = [
     { key: 'programmingLanguages', items: availableOptions.programmingLanguages },
@@ -119,8 +129,6 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
     });
   };
 
-  const activeFilterCount = Object.values(filters).reduce((acc, curr) => acc + curr.length, 0);
-
   const renderFilterButton = (item: string, key: keyof Filters, style: CategoryStyle) => {
     const isSelected = filters[key].includes(item);
     const unselectedClass = 'bg-neutral-800/80 text-gray-400';
@@ -131,15 +139,19 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
         key={item}
         onClick={() => toggleFilter(key, item)}
         className={`${appliedClass} ${!isSelected && style.bgHover} px-2 py-1 rounded-md text-xs transition-all duration-150 hover:opacity-90 focus:ring-0 focus-visible:ring-0 focus:outline-none focus-visible:outline-none`}
+        aria-label={`Filter by ${item}`}
+        type="button"
       >
         {item}
       </button>
     );
   };
 
+  const activeFilterCount = Object.values(filters).reduce((acc, curr) => acc + curr.length, 0);
+
   return (
     <div className="relative">
-      {/* Floating header */}
+      {/* Filter Header */}
       <div className="absolute -top-8 left-3 flex items-center gap-2">
         <Filter className="w-5 h-5 text-violet-400" />
         <span className="text-sm text-gray-300 font-medium">Filter Results</span>
@@ -150,9 +162,9 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
         )}
       </div>
 
-      {/* Main filter panel */}
+      {/* Main Filter Panel */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-4">
-        {/* Top level categories */}
+        {/* Top Level Categories Grid */}
         <div className="grid grid-cols-3 gap-x-12 gap-y-8 mb-8">
           {topLevelCategories.map(({ key, items }) => {
             const style = categoryStyles[key as keyof Filters];
@@ -176,7 +188,7 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
           })}
         </div>
 
-        {/* Divider with label */}
+        {/* Azure Services Section Divider */}
         <div className="relative mb-8">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-neutral-800"></div>
@@ -188,16 +200,22 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
           </div>
         </div>
 
-        {/* Azure Services section with dynamic categories */}
+        {/* Azure Services Categories Grid */}
         <div className="grid grid-cols-3 gap-12">
-          {Object.entries(serviceMapping).map(([category, services]: [string, Array<string>]) => (
+          {Object.entries(groupedAzureServices).map(([category, services]) => (
             <div key={category} className="flex flex-col gap-3">
               <h4 className="text-xs font-medium text-blue-300 uppercase tracking-wider">
                 {category}
               </h4>
               <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-                {services.map((service: string) => 
-                  renderFilterButton(service, 'azureServices', categoryStyles.azureServices)
+                {services.length > 0 ? (
+                  services.map(service => 
+                    renderFilterButton(service, 'azureServices', categoryStyles.azureServices)
+                  )
+                ) : (
+                  <span className="px-2 py-1 bg-neutral-800/50 text-gray-500 text-xs rounded-md">
+                    No services available
+                  </span>
                 )}
               </div>
             </div>

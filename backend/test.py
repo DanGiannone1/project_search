@@ -7,7 +7,7 @@ from cosmosdb import CosmosDBManager
 load_dotenv()
 
 COSMOS_DATABASE_ID = "codewith_project_search"
-COSMOS_CONTAINER_ID = "project_container"
+COSMOS_CONTAINER_ID = "project_container_test"
 
 # Initialize Cosmos DB manager
 cosmos_db = CosmosDBManager(
@@ -15,16 +15,9 @@ cosmos_db = CosmosDBManager(
     cosmos_container_id=COSMOS_CONTAINER_ID
 )
 
-# Load the service-to-category mapping
-with open('service_category_mapping.json', 'r') as f:
-    service_to_category = json.load(f)
-
-# Prepare the data for upserting
-data = {
-    "id": "service_mapping",
-    "partitionKey": "metadata",
-    "mapping": service_to_category
-}
+# Load the approved tags data
+with open('approved_tags.json', 'r') as f:
+    approved_tags = json.load(f)
 
 # Upsert the data to Cosmos DB
-cosmos_db.upsert_item(data)
+cosmos_db.upsert_item(approved_tags)

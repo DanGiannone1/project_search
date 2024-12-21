@@ -45,8 +45,9 @@ logger.info(f"User: {user}")
 load_dotenv()
 
 
-COSMOS_DATABASE_ID = "codewith_project_search"
-COSMOS_CONTAINER_ID = "project_container"
+
+COSMOS_DATABASE_ID = os.getenv("COSMOS_DATABASE_ID")
+COSMOS_CONTAINER_ID = os.getenv("COSMOS_CONTAINER_ID")
 
 cosmos_db = None
 
@@ -59,6 +60,7 @@ try:
     logger.info("CosmosDB connection initialized successfully")
 except Exception as e:
     logger.error(f"Failed to initialize CosmosDB connection: {str(e)}")
+    raise Exception("Failed to initialize CosmosDB connection")
 
 app = Flask(__name__, static_folder='dist', static_url_path='')
 CORS(app)  # Enable CORS
@@ -355,8 +357,7 @@ def serve(path):
 @app.route('/api/admin/get_pending_reviews', methods=['GET'])
 def get_pending_reviews():
     try:
-        # Query only pending reviews now
-        query = "SELECT * FROM c WHERE c.review_status = 'pending'"
+        query = "SELECT * FROM c WHERE c.review_status = 'pending' AND c.partitionKey = 'project'"
         parameters = []
         pending_reviews = cosmos_db.query_items(query, parameters)
         return jsonify(pending_reviews), 200
@@ -367,11 +368,18 @@ def get_pending_reviews():
 @app.route('/api/get_filter_options', methods=['GET'])
 def get_filter_options():
     try:
-        # Query only approved projects
         logger.info("fetching_filter_options")
-        query = "SELECT * FROM c WHERE c.review_status = 'approved'"
-        projects = cosmos_db.query_items(query)
+        
+        # Get approved tags and service mapping
+        approved_tags_query = "SELECT * FROM c WHERE c.id = 'approved_tags' AND c.partitionKey = 'metadata'"
+        approved_tags_results = list(cosmos_db.query_items(approved_tags_query))
+        approved_tags = approved_tags_results[0] if approved_tags_results else {}
+        
+        # Query approved projects
+        projects_query = "SELECT * FROM c WHERE c.review_status = 'approved'"
+        projects = cosmos_db.query_items(projects_query)
 
+        # Initialize sets for collecting distinct values
         prog_langs = set()
         frameworks = set()
         azure_services = set()
@@ -380,31 +388,42 @@ def get_filter_options():
         project_types = set()
         code_complexities = set()
 
+        # Collect distinct values from projects and cross-check with approved tags
         for p in projects:
             for pl in p.get('programmingLanguages', []):
-                prog_langs.add(pl)
+                if pl in approved_tags.get('programming_languages', []):
+                    prog_langs.add(pl)
             for fw in p.get('frameworks', []):
-                frameworks.add(fw)
+                if fw in approved_tags.get('frameworks', []):
+                    frameworks.add(fw)
             for az in p.get('azureServices', []):
-                azure_services.add(az)
+                if az in approved_tags.get('azure_services', []):
+                    azure_services.add(az)
             for dp in p.get('designPatterns', []):
-                design_patterns.add(dp)
+                if dp in approved_tags.get('design_patterns', []):
+                    design_patterns.add(dp)
             for ind in p.get('industries', []):
-                industries.add(ind)
+                if ind in approved_tags.get('industries', []):
+                    industries.add(ind)
             if 'projectType' in p and p['projectType']:
                 project_types.add(p['projectType'])
             if 'codeComplexity' in p and p['codeComplexity']:
                 code_complexities.add(p['codeComplexity'])
 
-        return jsonify({
-            "programmingLanguages": sorted(list(prog_langs)),
-            "frameworks": sorted(list(frameworks)),
-            "azureServices": sorted(list(azure_services)),
-            "designPatterns": sorted(list(design_patterns)),
-            "industries": sorted(list(industries)),
-            "projectTypes": sorted(list(project_types)),
-            "codeComplexities": sorted(list(code_complexities))  # NEW
-        }), 200
+
+        data = {
+            "programmingLanguages": sorted(prog_langs),
+            "frameworks": sorted(frameworks),
+            "azureServices": sorted(azure_services),
+            "azureServiceCategories": approved_tags.get('azure_service_mapping', {}),
+            "designPatterns": sorted(design_patterns),
+            "industries": sorted(industries),
+            "projectTypes": sorted(project_types),
+            "codeComplexities": ["Beginner", "Intermediate", "Advanced"]
+        }
+        print(json.dumps(data, indent=2))
+
+        return jsonify(data), 200
 
     except Exception as e:
         print(f"Error in get_filter_options: {e}")
@@ -413,22 +432,21 @@ def get_filter_options():
             error_type=type(e).__name__
         )
         return jsonify({"error": str(e)}), 500
+    
 
-# Update /api/admin/approve_project endpoint
 @app.route('/api/admin/approve_project', methods=['POST'])
 def approve_project():
     try:
         data = request.get_json()
-        # Set review_status = approved
         data['review_status'] = 'approved'
         data['partitionKey'] = 'project'
+        
         # Update the item in Cosmos
         cosmos_db.upsert_item(data)
 
         # Add the project to the search index
         result = add_project(data)
         if result.get("success"):
-            # No deletion needed since we keep data in Cosmos.
             return jsonify({"message": "Project approved and added to index.", "project": result["project"]}), 200
         else:
             return jsonify({"error": result.get("error", "Failed to add project.")}), 500
@@ -468,75 +486,108 @@ def check_admin():
         print(f"Error checking admin status: {str(e)}")
         return jsonify({"isAdmin": False, "error": str(e)}), 500
 
-# NEW CODE START
 @app.route('/api/admin/get_approved_tags', methods=['GET'])
 def get_approved_tags():
     try:
         query = "SELECT * FROM c WHERE c.id = 'approved_tags' AND c.partitionKey = 'metadata'"
-        tags = cosmos_db.query_items(query)
+        results = cosmos_db.query_items(query)
+        tags = list(results)
+        
         if tags:
-            return jsonify(tags[0]), 200
+            tag_data = tags[0]
+            return jsonify({
+                "id": "approved_tags",
+                "partitionKey": "metadata",
+                "programming_languages": tag_data.get('programming_languages', []),
+                "frameworks": tag_data.get('frameworks', []),
+                "azure_services": tag_data.get('azure_services', []),
+                "design_patterns": tag_data.get('design_patterns', []),
+                "industries": tag_data.get('industries', []),
+                "projectTypes": tag_data.get('project_types', []),  # Add this line
+                "azure_service_mapping": tag_data.get('azure_service_mapping', {})
+            }), 200
         else:
-            # If not found, return empty structure
+            # Return empty structure if not found
             empty_tags = {
                 "id": "approved_tags",
                 "partitionKey": "metadata",
                 "programming_languages": [],
                 "frameworks": [],
-                "azure_services": {
-                    "application": [],
-                    "data": [],
-                    "ai": []
-                },
+                "azure_services": [],
                 "design_patterns": [],
-                "industry": []
+                "industries": [],
+                "projectTypes": [],  # Add this line as empty
+                "azure_service_mapping": {}
             }
             return jsonify(empty_tags), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route('/api/admin/update_approved_tags', methods=['POST'])
 def update_approved_tags():
     try:
         data = request.get_json()
-        # Ensure id and partitionKey are set
-        data["id"] = "approved_tags"
-        data["partitionKey"] = "metadata"
-        cosmos_db.upsert_item(data)
+        
+        print("raw payload:\n" , json.dumps(data, indent=2))
+
+        # Create the updated structure, now including project_types
+        updated_tags = {
+            "id": "approved_tags",
+            "partitionKey": "metadata",
+            "programming_languages": data.get('programmingLanguages', []),
+            "frameworks": data.get('frameworks', []),
+            "azure_services": data.get('azureServices', []),
+            "design_patterns": data.get('designPatterns', []),
+            "industries": data.get('industries', []),
+            "project_types": data.get('projectTypes', []),  # Add this line
+            "azure_service_mapping": data.get('azureServiceMapping', {})
+        }
+        
+        print("Updated tags:")
+        print(json.dumps(updated_tags, indent=2))
+
+        # Upsert into Cosmos DB
+        cosmos_db.upsert_item(updated_tags)
         return jsonify({"message": "Approved tags updated successfully."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/get_service_mapping', methods=['GET'])
-def get_service_mapping():
-    try:
-        query = "SELECT * FROM c WHERE c.id = 'service_mapping' AND c.partitionKey = 'metadata'"
-        results = cosmos_db.query_items(query)
+
+# @app.route('/api/get_service_mapping', methods=['GET'])
+# def get_service_mapping():
+#     try:
+#         query = "SELECT * FROM c WHERE c.id = 'approved_tags' AND c.partitionKey = 'metadata'"
+#         results = cosmos_db.query_items(query)
+#         tags = list(results)
         
-        mapping_data = list(results)
-        if not mapping_data:
-            return jsonify({"error": "Service mapping not found"}), 404
+#         if not tags:
+#             return jsonify({"error": "Service mapping not found"}), 404
             
-        # Get the mapping from the first result
-        service_mapping = mapping_data[0].get('mapping', {})
+#         # Get the service mapping
+#         service_mapping = tags[0].get('azure_service_mapping', {})
         
-        # Create categorized structure
-        categorized_services = {
-            "AI & ML": [],
-            "Data": [],
-            "Application": []
-        }
+#         # Create categorized structure
+#         categorized_services = {
+#             "AI": [],
+#             "Data": [],
+#             "Application": []
+#         }
         
-        # Categorize services
-        for service, category in service_mapping.items():
-            if category in categorized_services:
-                categorized_services[category].append(service)
+#         # Categorize services
+#         for service, category in service_mapping.items():
+#             if category in categorized_services:
+#                 categorized_services[category].append(service)
+                
+#         # Sort services within each category
+#         for category in categorized_services:
+#             categorized_services[category].sort()
+            
+#         return jsonify(categorized_services), 200
         
-        return jsonify(categorized_services), 200
-        
-    except Exception as e:
-        print(f"Error fetching service mapping: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+#     except Exception as e:
+#         print(f"Error fetching service mapping: {str(e)}")
+#         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/search_projects', methods=['POST'])
 def search():

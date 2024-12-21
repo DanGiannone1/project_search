@@ -1,4 +1,3 @@
-// frontend/src/components/ProjectSearch/types.ts
 export interface Project {
   id: string;
   projectName?: string;
@@ -16,7 +15,7 @@ export interface Project {
   approved?: boolean;
   rejectionReason?: string;
   industries?: string[];
-  review_status?: string; // NEW field to align with backend
+  review_status?: string;
 }
 
 export interface Filters {
@@ -26,10 +25,36 @@ export interface Filters {
   designPatterns: string[];
   industries: string[];
   projectTypes: string[];
-  codeComplexities: string[]; // NEW for code complexity
+  codeComplexities: string[];
+}
+
+export interface AvailableOptions {
+  programmingLanguages: string[];
+  frameworks: string[];
+  azureServices: string[];
+  azureServiceCategories: {
+    [service: string]: string;  // maps service name to category
+  };
+  designPatterns: string[];
+  industries: string[];
+  projectTypes: string[];
+  codeComplexities: string[];
 }
 
 export interface SortOption {
   value: string;
   label: string;
+}
+
+export interface ApprovedTags {
+  programmingLanguages: string[];
+  frameworks: string[];
+  azureServices: string[];
+  azureServiceCategories: {
+    [service: string]: string;  // maps service name to category
+  };
+  designPatterns: string[];
+  industries: string[];
+  projectTypes: string[];
+  codeComplexities: string[];
 }

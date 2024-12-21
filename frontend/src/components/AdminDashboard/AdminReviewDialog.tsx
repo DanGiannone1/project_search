@@ -1,24 +1,11 @@
-// frontend/src/components/AdminDashboard/AdminReviewDialog.tsx
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { Project } from '@/components/ProjectSearch/types';
+import { Project, ApprovedTags } from '@/components/ProjectSearch/types';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import ArrayInput from '@/components/ProjectSearch/ArrayInput';
-
-interface ApprovedTags {
-  programming_languages: string[];
-  frameworks: string[];
-  azure_services: {
-    application: string[];
-    data: string[];
-    ai: string[];
-  };
-  design_patterns: string[];
-  industry: string[];
-}
+import ValidatedArrayInput from './ValidatedArrayInput';
 
 interface AdminReviewDialogProps {
   isOpen: boolean;
@@ -40,6 +27,13 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
   const [editedProject, setEditedProject] = useState<Project>({ ...project });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
+  const [validationStates, setValidationStates] = useState({
+    programmingLanguages: true,
+    frameworks: true,
+    azureServices: true,
+    designPatterns: true,
+    industries: true
+  });
 
   const validateProject = (): boolean => {
     const errors: { [key: string]: string } = {};
@@ -65,7 +59,19 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
     }
 
     setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    
+    // Check if all tag validations pass and there are no field errors
+    const allTagsValid = Object.values(validationStates).every(state => state);
+    const noFieldErrors = Object.keys(errors).length === 0;
+    
+    return allTagsValid && noFieldErrors;
+  };
+
+  const handleValidationChange = (field: keyof typeof validationStates) => (isValid: boolean) => {
+    setValidationStates(prev => ({
+      ...prev,
+      [field]: isValid
+    }));
   };
 
   const handleApprove = async () => {
@@ -74,8 +80,11 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
     }
 
     setIsSubmitting(true);
-    await onApprove(editedProject);
-    setIsSubmitting(false);
+    try {
+      await onApprove(editedProject);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReject = async () => {
@@ -83,8 +92,11 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
     if (!reason) return;
     
     setIsSubmitting(true);
-    await onReject(editedProject.id, reason);
-    setIsSubmitting(false);
+    try {
+      await onReject(editedProject.id, reason);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (field: keyof Project, value: any) => {
@@ -103,7 +115,10 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
     }
   };
 
-  const complexityOptions = ['Beginner', 'Intermediate', 'Advanced'];
+  // Check if any tags are invalid
+  const hasInvalidTags = !Object.values(validationStates).every(state => state);
+
+  const complexityOptions = ['Basic', 'Intermediate', 'Advanced'];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -113,6 +128,14 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
             Review & Edit Project Details
           </DialogTitle>
         </DialogHeader>
+
+        {hasInvalidTags && (
+          <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-md">
+            <p className="text-red-400 text-sm">
+              Please correct all tag validation errors before approving the project.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-4 mt-4">
           <div>
@@ -129,7 +152,7 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
             <Input
               value={editedProject.owner || 'anonymous'}
               onChange={(e) => handleInputChange('owner', e.target.value)}
-              className={`bg-neutral-800 border-neutral-700 text-white h-12`}
+              className="bg-neutral-800 border-neutral-700 text-white h-12"
             />
           </div>
 
@@ -167,61 +190,51 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
             />
           </div>
 
-          <ArrayInput
+          <ValidatedArrayInput
             label="Programming Languages"
             value={editedProject.programmingLanguages || []}
             onChange={(value) => handleInputChange('programmingLanguages', value)}
             placeholder="Enter programming languages..."
-            approvedTags={approvedTags?.programming_languages}
-            category="programming_languages"
+            approvedTags={approvedTags?.programmingLanguages}
+            onValidationChange={handleValidationChange('programmingLanguages')}
           />
 
-          <ArrayInput
+          <ValidatedArrayInput
             label="Frameworks"
             value={editedProject.frameworks || []}
             onChange={(value) => handleInputChange('frameworks', value)}
             placeholder="Enter frameworks..."
             approvedTags={approvedTags?.frameworks}
-            category="frameworks"
+            onValidationChange={handleValidationChange('frameworks')}
           />
 
-          <ArrayInput
+          <ValidatedArrayInput
             label="Azure Services"
             value={editedProject.azureServices || []}
             onChange={(value) => handleInputChange('azureServices', value)}
             placeholder="Enter Azure services..."
-            category="azure_services"
-            azureServicesData={approvedTags?.azure_services}
+            approvedTags={approvedTags?.azureServices}
+            onValidationChange={handleValidationChange('azureServices')}
           />
 
-          <ArrayInput
+          <ValidatedArrayInput
             label="Design Patterns"
             value={editedProject.designPatterns || []}
             onChange={(value) => handleInputChange('designPatterns', value)}
             placeholder="Enter design patterns..."
-            approvedTags={approvedTags?.design_patterns}
-            category="design_patterns"
+            approvedTags={approvedTags?.designPatterns}
+            onValidationChange={handleValidationChange('designPatterns')}
           />
 
-          <ArrayInput
+          <ValidatedArrayInput
             label="Industries"
             value={editedProject.industries || []}
             onChange={(value) => handleInputChange('industries', value)}
             placeholder="Enter industries..."
-            approvedTags={approvedTags?.industry}
-            category="industry"
+            approvedTags={approvedTags?.industries}
+            onValidationChange={handleValidationChange('industries')}
             multiline={true}
           />
-
-          <div>
-            <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Type</label>
-            <Input
-              placeholder="Project Type"
-              value={editedProject.projectType || ''}
-              onChange={(e) => handleInputChange('projectType', e.target.value)}
-              className="bg-neutral-800 border-neutral-700 text-white h-12"
-            />
-          </div>
 
           <div>
             <label className="block text-sm font-semibold mb-1 text-indigo-400">
@@ -231,16 +244,16 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
               )}
             </label>
             <div className="flex space-x-2">
-              {complexityOptions.map((option) => (
+              {complexityOptions.map((complexity) => (
                 <Button
-                  key={option}
-                  variant={editedProject.codeComplexity === option ? 'accentGradient' : 'secondary'}
-                  onClick={() => handleInputChange('codeComplexity', option)}
+                  key={complexity}
+                  variant={editedProject.codeComplexity === complexity ? 'accentGradient' : 'secondary'}
+                  onClick={() => handleInputChange('codeComplexity', complexity)}
                   className={`flex-1 ${
                     validationErrors.codeComplexity ? 'border border-red-500' : ''
                   }`}
                 >
-                  {option}
+                  {complexity}
                 </Button>
               ))}
             </div>
@@ -283,8 +296,12 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
           <div className="flex space-x-2 mt-4">
             <Button
               onClick={handleApprove}
-              disabled={isSubmitting}
-              className="flex-1 bg-green-600 hover:bg-green-500 focus-visible:ring-green-400 text-white"
+              disabled={isSubmitting || hasInvalidTags}
+              className={`flex-1 ${
+                hasInvalidTags 
+                  ? 'bg-green-900/50 hover:bg-green-900/50 cursor-not-allowed' 
+                  : 'bg-green-600 hover:bg-green-500'
+              } focus-visible:ring-green-400 text-white`}
             >
               {isSubmitting ? (
                 <div className="flex items-center space-x-2">

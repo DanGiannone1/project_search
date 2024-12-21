@@ -1,8 +1,8 @@
-// frontend/src/components/ProjectSearch/ProjectSearch.tsx
+// ProjectSearch.tsx
 import { useState, useEffect } from 'react';
 import SearchCard from './SearchCard';
 import ResultsDisplay from './ResultsDisplay';
-import { Project, Filters } from './types';
+import { Project, Filters, AvailableOptions } from './types';  // Import AvailableOptions from types
 import InlineFilterPanel from './InlineFilterPanel';
 
 function ProjectSearch() {
@@ -20,22 +20,15 @@ function ProjectSearch() {
     codeComplexities: []
   });
 
-  const [availableOptions, setAvailableOptions] = useState({
+  const [availableOptions, setAvailableOptions] = useState<AvailableOptions>({
     programmingLanguages: [],
     frameworks: [],
     azureServices: [],
+    azureServiceCategories: {},
     designPatterns: [],
     industries: [],
     projectTypes: [],
     codeComplexities: []
-  });
-
-  const [serviceMapping, setServiceMapping] = useState<{
-    [key: string]: string[];
-  }>({
-    'AI & ML': [],
-    'Data': [],
-    'Application': []
   });
 
   const [showFilterPanel, setShowFilterPanel] = useState(false);
@@ -57,23 +50,6 @@ function ProjectSearch() {
     fetchFilterOptions();
   }, []);
 
-  useEffect(() => {
-    async function fetchServiceMapping() {
-      try {
-        const res = await fetch('/api/get_service_mapping');
-        if (!res.ok) {
-          throw new Error('Failed to fetch service mapping');
-        }
-        const data = await res.json();
-        setServiceMapping(data);
-      } catch (error) {
-        console.error('Error fetching service mapping:', error);
-      }
-    }
-
-    fetchServiceMapping();
-  }, []);
-
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     setIsSearching(true);
@@ -84,7 +60,7 @@ function ProjectSearch() {
         body: JSON.stringify({
           query: searchQuery,
           filters: filters,
-          sort: '' // no sorting now
+          sort: ''
         }),
       });
 
@@ -103,7 +79,6 @@ function ProjectSearch() {
 
   return (
     <div className="w-screen min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
-      {/* Header section with fixed width */}
       <div className="flex flex-col items-center pt-16 px-6">
         <h1 className="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-500 mb-4">
           Project Search
@@ -124,7 +99,6 @@ function ProjectSearch() {
         </div>
       </div>
 
-      {/* Filter panel and results with full width */}
       <div className="px-6 mt-8">
         {showFilterPanel && (
           <div className="animate-in slide-in-from-top-4 duration-200">
@@ -132,7 +106,6 @@ function ProjectSearch() {
               filters={filters}
               setFilters={setFilters}
               availableOptions={availableOptions}
-              serviceMapping={serviceMapping} // Passed as prop
             />
           </div>
         )}
