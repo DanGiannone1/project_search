@@ -17,7 +17,8 @@ function ProjectSearch() {
     designPatterns: [],
     industries: [],
     projectTypes: [],
-    codeComplexities: []
+    codeComplexities: [],
+    customers: []
   });
 
   const [availableOptions, setAvailableOptions] = useState<AvailableOptions>({
@@ -28,7 +29,8 @@ function ProjectSearch() {
     designPatterns: [],
     industries: [],
     projectTypes: [],
-    codeComplexities: []
+    codeComplexities: [],
+    customers: []
   });
 
   const [showFilterPanel, setShowFilterPanel] = useState(false);

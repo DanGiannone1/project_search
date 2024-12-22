@@ -43,18 +43,18 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
       </div>
 
       <div>
-      <label className="block text-sm font-semibold mb-1 text-indigo-400">Owner</label>
-      <Input
-        value={extractedData.owner || 'anonymous'}
-        onChange={(e) =>
-          setExtractedData({
-            ...extractedData,
-            owner: e.target.value,
-          })
-        }
-        className="bg-neutral-800 border-neutral-700 text-white h-12"
-      />
-    </div>
+        <label className="block text-sm font-semibold mb-1 text-indigo-400">Owner</label>
+        <Input
+          value={extractedData.owner || 'anonymous'}
+          onChange={(e) =>
+            setExtractedData({
+              ...extractedData,
+              owner: e.target.value,
+            })
+          }
+          className="bg-neutral-800 border-neutral-700 text-white h-12"
+        />
+      </div>
 
       <div>
         <label className="block text-sm font-semibold mb-1 text-indigo-400">Project Name</label>
@@ -144,6 +144,19 @@ const AddProjectDialogReview: React.FC<AddProjectDialogReviewProps> = ({
           })
         }
         placeholder="Enter industries..."
+        multiline={true}
+      />
+
+      <ArrayInput
+        label="Customers"
+        value={extractedData.customers || []}
+        onChange={(value) =>
+          setExtractedData({
+            ...extractedData,
+            customers: value,
+          })
+        }
+        placeholder="What customers have leveraged this repo?"
         multiline={true}
       />
 

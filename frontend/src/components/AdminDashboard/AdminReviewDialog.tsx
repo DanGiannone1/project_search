@@ -6,6 +6,7 @@ import { Project, ApprovedTags } from '@/components/ProjectSearch/types';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import ValidatedArrayInput from './ValidatedArrayInput';
+import ArrayInput from '../ProjectSearch/ArrayInput';
 
 interface AdminReviewDialogProps {
   isOpen: boolean;
@@ -233,6 +234,14 @@ const AdminReviewDialog: React.FC<AdminReviewDialogProps> = ({
             placeholder="Enter industries..."
             approvedTags={approvedTags?.industries}
             onValidationChange={handleValidationChange('industries')}
+            multiline={true}
+          />
+
+          <ArrayInput
+            label="Customers"
+            value={editedProject.customers || []}
+            onChange={(value) => handleInputChange('customers', value)}
+            placeholder="What customers have leveraged this repo?"
             multiline={true}
           />
 

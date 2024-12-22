@@ -59,7 +59,7 @@ const AdminDashboard: React.FC = () => {
       if (!camelData.azureServiceCategories) {
         camelData.azureServiceCategories = {};
       }
-
+      console.log('Approved tags: ', camelData);
       setApprovedTags(camelData as ApprovedTags);
     } catch (error) {
       console.error('Error fetching approved tags:', error);
@@ -120,6 +120,7 @@ const AdminDashboard: React.FC = () => {
       }
       const data = await response.json();
       const camelData = Array.isArray(data) ? toCamelCase(data) : [];
+      console.log('Pending reviews:', camelData);
       setPendingReviews(camelData);
     } catch (error) {
       console.error('Error in fetchPendingReviews:', error);

@@ -178,7 +178,8 @@ def add_project(data: Dict) -> Dict:
             "project_type": data.get('projectType', ''),
             "business_value": data.get('businessValue', ''),
             "target_audience": data.get('targetAudience', ''),
-            "industries": data.get('industries', [])
+            "industries": data.get('industries', []),
+            "customers": data.get('customers', [])
         }
 
         print(json.dumps(new_project, indent=2))

@@ -1,11 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Filters, AvailableOptions } from './types';
-import { Code2, Box, Layers, LayoutTemplate, Activity, Cloud, Globe, Filter } from 'lucide-react';
+import { Code2, Box, Layers, LayoutTemplate, Activity, Cloud, Globe, Filter, Building2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+
+const DUMMY_COMPANIES = [
+  { id: '1', name: 'Contoso Ltd.' },
+  { id: '2', name: 'Woodgrove Bank' },
+  { id: '3', name: 'Alpine Ski House' }
+];
 
 interface InlineFilterPanelProps {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   availableOptions: AvailableOptions;
+  onCustomerSelect?: (customer: { id: string; name: string } | null) => void;
 }
 
 interface CategoryStyle {
@@ -72,14 +80,65 @@ const categoryStyles: CategoryStylesType = {
     selectedBg: 'bg-pink-900/50 text-gray-300',
     bgHover: 'hover:bg-pink-900/30'
   },
+  customers: {
+    label: 'Customers',
+    headerColor: 'text-purple-400',
+    icon: <Building2 className="w-4 h-4" />,
+    selectedBg: 'bg-purple-900/50 text-gray-300',
+    bgHover: 'hover:bg-purple-900/30'
+  }
 };
 
 const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
   filters,
   setFilters,
-  availableOptions
+  availableOptions,
+  onCustomerSelect
 }) => {
-  // Group Azure services by category for display
+  const [customerQuery, setCustomerQuery] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [filteredCompanies, setFilteredCompanies] = useState(DUMMY_COMPANIES);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleCustomerSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setCustomerQuery(query);
+    
+    if (!query.trim()) {
+      onCustomerSelect?.(null);
+      setFilters(prev => ({ ...prev, customers: [] }));
+    }
+    
+    if (query.trim()) {
+      const filtered = DUMMY_COMPANIES.filter(company =>
+        company.name.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredCompanies(filtered);
+      setIsDropdownOpen(true);
+    } else {
+      setFilteredCompanies(DUMMY_COMPANIES);
+      setIsDropdownOpen(false);
+    }
+  };
+
+  const handleSelectCompany = (company: { id: string; name: string }) => {
+    setCustomerQuery(company.name);
+    setIsDropdownOpen(false);
+    onCustomerSelect?.(company);
+    setFilters(prev => ({ ...prev, customers: [company.name] }));
+  };
+
   const groupedAzureServices = React.useMemo(() => {
     const grouped: { [category: string]: string[] } = {
       'AI': [],
@@ -87,7 +146,6 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
       'Application': []
     };
     
-    // For each service, look up its category and add it to the appropriate group
     availableOptions.azureServices.forEach(service => {
       const category = availableOptions.azureServiceCategories[service];
       if (category && grouped[category]) {
@@ -95,7 +153,6 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
       }
     });
 
-    // Sort services within each category
     Object.keys(grouped).forEach(category => {
       grouped[category].sort();
     });
@@ -107,9 +164,13 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
     { key: 'programmingLanguages', items: availableOptions.programmingLanguages },
     { key: 'frameworks', items: availableOptions.frameworks },
     { key: 'projectTypes', items: availableOptions.projectTypes },
-    { key: 'designPatterns', items: availableOptions.designPatterns },
+    { key: 'customers', items: filters.customers },
+  ];
+
+  const bottomCategories = [
     { key: 'codeComplexities', items: availableOptions.codeComplexities },
     { key: 'industries', items: availableOptions.industries },
+    { key: 'designPatterns', items: availableOptions.designPatterns },
   ];
 
   const toggleFilter = (categoryKey: keyof Filters, value: string) => {
@@ -121,6 +182,12 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
           [categoryKey]: currentValues.filter(v => v !== value),
         };
       } else {
+        if (categoryKey === 'customers') {
+          return {
+            ...prev,
+            [categoryKey]: [value],
+          };
+        }
         return {
           ...prev,
           [categoryKey]: [...currentValues, value],
@@ -151,21 +218,20 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
 
   return (
     <div className="relative">
-      {/* Filter Header */}
-      <div className="absolute -top-8 left-3 flex items-center gap-2">
-        <Filter className="w-5 h-5 text-violet-400" />
-        <span className="text-sm text-gray-300 font-medium">Filter Results</span>
-        {activeFilterCount > 0 && (
-          <span className="text-sm text-violet-400 ml-2">
-            {activeFilterCount} active filter{activeFilterCount !== 1 ? 's' : ''}
-          </span>
-        )}
+      <div className="flex items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Filter className="w-5 h-5 text-violet-400" />
+          <span className="text-sm text-gray-300 font-medium">Filter Results</span>
+          {activeFilterCount > 0 && (
+            <span className="text-sm text-violet-400 ml-2">
+              {activeFilterCount} active filter{activeFilterCount !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Main Filter Panel */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-4">
-        {/* Top Level Categories Grid */}
-        <div className="grid grid-cols-3 gap-x-12 gap-y-8 mb-8">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+        <div className="grid grid-cols-4 gap-x-8 gap-y-8 mb-8">
           {topLevelCategories.map(({ key, items }) => {
             const style = categoryStyles[key as keyof Filters];
             return (
@@ -174,21 +240,75 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
                   {style.icon}
                   <span>{style.label}</span>
                 </h3>
-                <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-                  {items.length > 0 ? (
-                    items.map(item => renderFilterButton(item, key as keyof Filters, style))
-                  ) : (
-                    <span className="px-2 py-1 bg-neutral-800/50 text-gray-500 text-xs rounded-md">
-                      No options available
-                    </span>
-                  )}
-                </div>
+                {key === 'customers' ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="relative" ref={dropdownRef}>
+                      <Input
+                        type="search"
+                        placeholder="Search customers..."
+                        value={customerQuery}
+                        onChange={handleCustomerSearch}
+                        onFocus={() => customerQuery && setIsDropdownOpen(true)}
+                        className="h-8 w-48 bg-neutral-800/50 border-neutral-700/50 text-sm text-white placeholder:text-gray-400 focus:ring-violet-500/50 focus:border-violet-500/50"
+                      />
+                      
+                      {isDropdownOpen && filteredCompanies.length > 0 && (
+                        <div className="absolute w-full mt-1 bg-neutral-800 border border-neutral-700 rounded-md shadow-lg z-50">
+                          {filteredCompanies.map(company => (
+                            <button
+                              key={company.id}
+                              onClick={() => handleSelectCompany(company)}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-neutral-700 focus:bg-neutral-700 focus:outline-none"
+                            >
+                              {company.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+                      {items.map(item => renderFilterButton(item, key as keyof Filters, style))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+                    {items.length > 0 ? (
+                      items.map(item => renderFilterButton(item, key as keyof Filters, style))
+                    ) : (
+                      <span className="px-2 py-1 bg-neutral-800/50 text-gray-500 text-xs rounded-md">
+                        No options available
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
-        {/* Azure Services Section Divider */}
+        <div className="grid grid-cols-4 gap-x-8 gap-y-8 mb-8">
+            {bottomCategories.map(({ key, items }, index) => {
+                const style = categoryStyles[key as keyof Filters];
+                return (
+                <div key={key} className={index === 2 ? "col-span-2" : ""}>
+                    <h3 className={`text-sm font-semibold flex items-center gap-1.5 ${style.headerColor}`}>
+                    {style.icon}
+                    <span>{style.label}</span>
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5 min-h-[32px] mt-3">
+                    {items.length > 0 ? (
+                        items.map(item => renderFilterButton(item, key as keyof Filters, style))
+                    ) : (
+                        <span className="px-2 py-1 bg-neutral-800/50 text-gray-500 text-xs rounded-md">
+                        No options available
+                        </span>
+                    )}
+                    </div>
+                </div>
+                );
+            })}
+        </div>
+
         <div className="relative mb-8">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-neutral-800"></div>
@@ -200,7 +320,6 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
           </div>
         </div>
 
-        {/* Azure Services Categories Grid */}
         <div className="grid grid-cols-3 gap-12">
           {Object.entries(groupedAzureServices).map(([category, services]) => (
             <div key={category} className="flex flex-col gap-3">

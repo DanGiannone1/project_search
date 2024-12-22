@@ -1,3 +1,4 @@
+// types.ts
 export interface Project {
   id: string;
   projectName?: string;
@@ -15,6 +16,7 @@ export interface Project {
   approved?: boolean;
   rejectionReason?: string;
   industries?: string[];
+  customers?: string[];
   review_status?: string;
 }
 
@@ -26,6 +28,7 @@ export interface Filters {
   industries: string[];
   projectTypes: string[];
   codeComplexities: string[];
+  customers: string[];
 }
 
 export interface AvailableOptions {
@@ -39,6 +42,7 @@ export interface AvailableOptions {
   industries: string[];
   projectTypes: string[];
   codeComplexities: string[];
+  customers: string[];
 }
 
 export interface SortOption {
