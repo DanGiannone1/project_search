@@ -387,6 +387,7 @@ def get_filter_options():
         industries = set()
         project_types = set()
         code_complexities = set()
+        customers = set()  # New set for customers
 
         # Collect distinct values from projects and cross-check with approved tags
         for p in projects:
@@ -409,7 +410,9 @@ def get_filter_options():
                 project_types.add(p['projectType'])
             if 'codeComplexity' in p and p['codeComplexity']:
                 code_complexities.add(p['codeComplexity'])
-
+            # Add customers without approval check
+            for customer in p.get('customers', []):
+                customers.add(customer)
 
         data = {
             "programmingLanguages": sorted(prog_langs),
@@ -419,9 +422,9 @@ def get_filter_options():
             "designPatterns": sorted(design_patterns),
             "industries": sorted(industries),
             "projectTypes": sorted(project_types),
-            "codeComplexities": ["Beginner", "Intermediate", "Advanced"]
+            "codeComplexities": ["Beginner", "Intermediate", "Advanced"],
+            "customers": sorted(customers)  # Add customers to response
         }
-        
 
         return jsonify(data), 200
 
@@ -604,8 +607,6 @@ def search():
         print(f"Filters: {filters}")
         print(f"Sort: {sort}")
 
-        if not query.strip():
-            return jsonify({"results": [], "message": "Please provide a search query"})
 
         results = search_projects(query, filters, sort)
         print(f"Found {len(results)} results")

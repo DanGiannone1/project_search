@@ -63,7 +63,8 @@ def build_filter_string(filters: Dict) -> str:
         'designPatterns': 'design_patterns',
         'industries': 'industries',
         'projectTypes': 'project_type',
-        'codeComplexities': 'code_complexity'
+        'codeComplexities': 'code_complexity',
+        'customers': 'customers'
     }
     
     for filter_key, values in filters.items():
@@ -95,6 +96,9 @@ def build_filter_string(filters: Dict) -> str:
 def search_projects(query: str, filters: Dict, sort: str) -> List[Dict]:
     try:
         # Generate embeddings for the search query
+        if query == "" or query is None:
+            query = "*"
+
         query_vector = generate_embeddings(query)
         
         # Create vector query
@@ -114,7 +118,7 @@ def search_projects(query: str, filters: Dict, sort: str) -> List[Dict]:
             filter=filter_string,  # Add the dynamic filter string here
             select=["id", "project_name", "project_description", "github_url", "owner",
                     "programming_languages", "frameworks", "azure_services",
-                    "design_patterns", "project_type", "code_complexity", "industries",
+                    "design_patterns", "project_type", "code_complexity", "industries", "customers",
                     "business_value", "target_audience"],
             top=8
         )
@@ -135,6 +139,7 @@ def search_projects(query: str, filters: Dict, sort: str) -> List[Dict]:
                 "projectType": result.get("project_type", ""),
                 "codeComplexity": result.get("code_complexity", ""),
                 "industries": result.get("industries", []),
+                "customers": result.get("customers", []),
                 "businessValue": result.get("business_value", ""),
                 "targetAudience": result.get("target_audience", "")
             }

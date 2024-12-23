@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Project } from './types';
-import { ExternalLink, Code2, Box, Layers, LayoutTemplate, Activity, Cloud, Gem, User, Globe  } from 'lucide-react';
+import { ExternalLink, Code2, Box, Layers, LayoutTemplate, Activity, Cloud, Gem, User, Globe, Building2 } from 'lucide-react';
 
 interface ResultsDisplayProps {
     results: Project[];
@@ -48,8 +48,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
                         </div>
 
                         {/* Metadata Section */}
-                        <div className="flex items-center gap-6 flex-wrap">
-                            {/* Programming Languages */}
+                        <div className="grid grid-cols-3 gap-6 pb-6">
+                            {/* Top Row */}
                             <div>
                                 <h3 className="text-red-400 text-xs font-medium mb-1.5 flex items-center gap-1">
                                     <Code2 className="w-4 h-4" /> Programming Languages
@@ -67,7 +67,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
                                 </div>
                             </div>
                             
-                            {/* Frameworks */}
                             <div>
                                 <h3 className="text-green-400 text-xs font-medium mb-1.5 flex items-center gap-1">
                                     <Box className="w-4 h-4" /> Frameworks
@@ -85,7 +84,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
                                 </div>
                             </div>
                             
-                            {/* Project Type */}
                             <div>
                                 <h3 className="text-cyan-400 text-xs font-medium mb-1.5 flex items-center gap-1">
                                     <Layers className="w-4 h-4" /> Project Type
@@ -94,9 +92,17 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
                                     {result.projectType || 'N/A'}
                                 </span>
                             </div>
-                            
-                            {/* Design Patterns */}
+
+                            {/* Bottom Row */}
                             <div>
+                                <h3 className="text-orange-400 text-xs font-medium mb-1.5 flex items-center gap-1">
+                                    <Activity className="w-4 h-4" /> Code Complexity
+                                </h3>
+                                <span className="px-2 py-1 bg-orange-800/60 text-gray-200 text-xs rounded-md">
+                                    {result.codeComplexity || 'N/A'}
+                                </span>
+                            </div>
+                            <div className="col-span-2">
                                 <h3 className="text-yellow-400 text-xs font-medium mb-1.5 flex items-center gap-1">
                                     <LayoutTemplate className="w-4 h-4" /> Design Patterns
                                 </h3>
@@ -113,15 +119,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
                                 </div>
                             </div>
                             
-                            {/* Code Complexity */}
-                            <div>
-                                <h3 className="text-orange-400 text-xs font-medium mb-1.5 flex items-center gap-1">
-                                    <Activity className="w-4 h-4" /> Code Complexity
-                                </h3>
-                                <span className="px-2 py-1 bg-orange-800/60 text-gray-200 text-xs rounded-md">
-                                    {result.codeComplexity || 'N/A'}
-                                </span>
-                            </div>
+                            
                         </div>
                         
                         {/* Azure Services */}
@@ -146,21 +144,42 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
 
                         {/* Business Context Section */}
                         <div>
-                            {/* Industries */}
-                            <div className="pt-2">
-                            <h3 className="text-pink-400 text-xs font-medium mb-2 flex items-center gap-1">
-                                <Globe className="w-4 h-4" /> Industries
-                            </h3>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {result.industries && result.industries.length > 0 ? (
-                                        result.industries.map((ind, index) => (
-                                            <span key={index} className="px-2 py-1 bg-pink-900/50 text-gray-300 text-xs rounded-md">
-                                                {ind}
-                                            </span>
-                                        ))
-                                    ) : (
-                                        <span className="px-2 py-1 bg-gray-600/50 text-gray-300 text-xs rounded-md">N/A</span>
-                                    )}
+                            {/* Industries and Customers Grid */}
+                            <div className="grid grid-cols-2 gap-6">
+                                {/* Industries */}
+                                <div>
+                                    <h3 className="text-pink-400 text-xs font-medium mb-2 flex items-center gap-1">
+                                        <Globe className="w-4 h-4" /> Industries
+                                    </h3>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {result.industries && result.industries.length > 0 ? (
+                                            result.industries.map((ind, index) => (
+                                                <span key={index} className="px-2 py-1 bg-pink-900/50 text-gray-300 text-xs rounded-md">
+                                                    {ind}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="px-2 py-1 bg-gray-600/50 text-gray-300 text-xs rounded-md">N/A</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Customers */}
+                                <div>
+                                    <h3 className="text-purple-400 text-xs font-medium mb-2 flex items-center gap-1">
+                                        <Building2 className="w-4 h-4" /> Customers
+                                    </h3>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {result.customers && result.customers.length > 0 ? (
+                                            result.customers.map((customer, index) => (
+                                                <span key={index} className="px-2 py-1 bg-purple-900/50 text-gray-300 text-xs rounded-md">
+                                                    {customer}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="px-2 py-1 bg-gray-600/50 text-gray-300 text-xs rounded-md">N/A</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -174,7 +193,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
                                 </p>
                             </div>
                             
-                            {/* Target Audience - remains unchanged */}
+                            {/* Target Audience */}
                             <div className="pt-6">
                                 <h3 className="text-rose-400 text-xs font-medium mb-2 flex items-center gap-1">
                                     <User className="w-4 h-4" /> Target Audience

@@ -3,17 +3,10 @@ import { Filters, AvailableOptions } from './types';
 import { Code2, Box, Layers, LayoutTemplate, Activity, Cloud, Globe, Filter, Building2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-const DUMMY_COMPANIES = [
-  { id: '1', name: 'Contoso Ltd.' },
-  { id: '2', name: 'Woodgrove Bank' },
-  { id: '3', name: 'Alpine Ski House' }
-];
-
 interface InlineFilterPanelProps {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   availableOptions: AvailableOptions;
-  onCustomerSelect?: (customer: { id: string; name: string } | null) => void;
 }
 
 interface CategoryStyle {
@@ -93,11 +86,10 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
   filters,
   setFilters,
   availableOptions,
-  onCustomerSelect
 }) => {
   const [customerQuery, setCustomerQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [filteredCompanies, setFilteredCompanies] = useState(DUMMY_COMPANIES);
+  const [filteredCompanies, setFilteredCompanies] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -116,40 +108,43 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
     setCustomerQuery(query);
     
     if (!query.trim()) {
-      onCustomerSelect?.(null);
       setFilters(prev => ({ ...prev, customers: [] }));
     }
     
     if (query.trim()) {
-      const filtered = DUMMY_COMPANIES.filter(company =>
-        company.name.toLowerCase().includes(query.toLowerCase())
-      );
+      const filtered = availableOptions.customers
+        .filter(customer => 
+          customer.toLowerCase().includes(query.toLowerCase())
+        );
       setFilteredCompanies(filtered);
       setIsDropdownOpen(true);
     } else {
-      setFilteredCompanies(DUMMY_COMPANIES);
+      setFilteredCompanies([]);
       setIsDropdownOpen(false);
     }
   };
 
-  const handleSelectCompany = (company: { id: string; name: string }) => {
-    setCustomerQuery(company.name);
+  const handleSelectCompany = (customer: string) => {
+    setCustomerQuery(customer);
     setIsDropdownOpen(false);
-    onCustomerSelect?.(company);
-    setFilters(prev => ({ ...prev, customers: [company.name] }));
+    setFilters(prev => ({ ...prev, customers: [customer] }));
   };
 
   const groupedAzureServices = React.useMemo(() => {
     const grouped: { [category: string]: string[] } = {
       'AI': [],
       'Data': [],
-      'Application': []
+      'Application': [],
+      'Other': []
     };
     
     availableOptions.azureServices.forEach(service => {
       const category = availableOptions.azureServiceCategories[service];
       if (category && grouped[category]) {
         grouped[category].push(service);
+      } else {
+        // If no category is found or category doesn't match predefined ones, put in "Other"
+        grouped['Other'].push(service);
       }
     });
 
@@ -256,11 +251,11 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
                         <div className="absolute w-full mt-1 bg-neutral-800 border border-neutral-700 rounded-md shadow-lg z-50">
                           {filteredCompanies.map(company => (
                             <button
-                              key={company.id}
+                              key={company}
                               onClick={() => handleSelectCompany(company)}
                               className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-neutral-700 focus:bg-neutral-700 focus:outline-none"
                             >
-                              {company.name}
+                              {company}
                             </button>
                           ))}
                         </div>
@@ -287,26 +282,26 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
         </div>
 
         <div className="grid grid-cols-4 gap-x-8 gap-y-8 mb-8">
-            {bottomCategories.map(({ key, items }, index) => {
-                const style = categoryStyles[key as keyof Filters];
-                return (
-                <div key={key} className={index === 2 ? "col-span-2" : ""}>
-                    <h3 className={`text-sm font-semibold flex items-center gap-1.5 ${style.headerColor}`}>
-                    {style.icon}
-                    <span>{style.label}</span>
-                    </h3>
-                    <div className="flex flex-wrap gap-1.5 min-h-[32px] mt-3">
-                    {items.length > 0 ? (
-                        items.map(item => renderFilterButton(item, key as keyof Filters, style))
-                    ) : (
-                        <span className="px-2 py-1 bg-neutral-800/50 text-gray-500 text-xs rounded-md">
-                        No options available
-                        </span>
-                    )}
-                    </div>
+          {bottomCategories.map(({ key, items }, index) => {
+            const style = categoryStyles[key as keyof Filters];
+            return (
+              <div key={key} className={index === 2 ? "col-span-2" : ""}>
+                <h3 className={`text-sm font-semibold flex items-center gap-1.5 ${style.headerColor}`}>
+                  {style.icon}
+                  <span>{style.label}</span>
+                </h3>
+                <div className="flex flex-wrap gap-1.5 min-h-[32px] mt-3">
+                  {items.length > 0 ? (
+                    items.map(item => renderFilterButton(item, key as keyof Filters, style))
+                  ) : (
+                    <span className="px-2 py-1 bg-neutral-800/50 text-gray-500 text-xs rounded-md">
+                      No options available
+                    </span>
+                  )}
                 </div>
-                );
-            })}
+              </div>
+            );
+          })}
         </div>
 
         <div className="relative mb-8">
@@ -320,25 +315,46 @@ const InlineFilterPanel: React.FC<InlineFilterPanelProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-12">
-          {Object.entries(groupedAzureServices).map(([category, services]) => (
-            <div key={category} className="flex flex-col gap-3">
-              <h4 className="text-xs font-medium text-blue-300 uppercase tracking-wider">
-                {category}
-              </h4>
-              <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-                {services.length > 0 ? (
-                  services.map(service => 
-                    renderFilterButton(service, 'azureServices', categoryStyles.azureServices)
-                  )
-                ) : (
-                  <span className="px-2 py-1 bg-neutral-800/50 text-gray-500 text-xs rounded-md">
-                    No services available
-                  </span>
-                )}
+        <div className="grid grid-cols-4 gap-8">
+          {Object.entries(groupedAzureServices).map(([category, services]) => {
+            // Skip if category is "Other" - we'll handle it separately
+            if (category === "Other") return null;
+            return (
+              <div key={category} className="flex flex-col gap-3">
+                <h4 className="text-xs font-medium text-blue-300 uppercase tracking-wider">
+                  {category}
+                </h4>
+                <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+                  {services.length > 0 ? (
+                    services.map(service => 
+                      renderFilterButton(service, 'azureServices', categoryStyles.azureServices)
+                    )
+                  ) : (
+                    <span className="px-2 py-1 bg-neutral-800/50 text-gray-500 text-xs rounded-md">
+                      No services available
+                    </span>
+                  )}
+                </div>
               </div>
+            );
+          })}
+          {/* Other category */}
+          <div className="flex flex-col gap-3">
+            <h4 className="text-xs font-medium text-blue-300 uppercase tracking-wider">
+              Other
+            </h4>
+            <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+              {groupedAzureServices["Other"] && groupedAzureServices["Other"].length > 0 ? (
+                groupedAzureServices["Other"].map(service => 
+                  renderFilterButton(service, 'azureServices', categoryStyles.azureServices)
+                )
+              ) : (
+                <span className="px-2 py-1 bg-neutral-800/50 text-gray-500 text-xs rounded-md">
+                  No services available
+                </span>
+              )}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </div>

@@ -53,7 +53,7 @@ function ProjectSearch() {
   }, []);
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+    //if (!searchQuery.trim()) return;
     setIsSearching(true);
     try {
       const response = await fetch('/api/search_projects', {
