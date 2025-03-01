@@ -641,6 +641,42 @@ async def send_for_review(data: ProjectReview):
     else:
         raise HTTPException(status_code=500, detail="Failed to send review request.")
 
+@app.get("/api/list_projects")
+async def list_projects():
+    try:
+        # Query all approved projects from Cosmos DB
+        query = "SELECT * FROM c WHERE c.review_status = 'approved' AND c.partitionKey = 'project'"
+        projects = cosmos_db.query_items(query)
+        
+        # Format the results to match the format expected by the frontend
+        formatted_projects = []
+        for p in projects:
+            project = {
+                "id": p.get("id", ""),
+                "projectName": p.get("projectName", ""),
+                "projectDescription": p.get("projectDescription", ""),
+                "githubUrl": p.get("githubUrl", ""),
+                "owner": p.get("owner", "anonymous"),
+                "programmingLanguages": p.get("programmingLanguages", []),
+                "frameworks": p.get("frameworks", []),
+                "azureServices": p.get("azureServices", []),
+                "designPatterns": p.get("designPatterns", []),
+                "projectType": p.get("projectType", ""),
+                "codeComplexity": p.get("codeComplexity", ""),
+                "industries": p.get("industries", []),
+                "customers": p.get("customers", []),
+                "businessValue": p.get("businessValue", ""),
+                "targetAudience": p.get("targetAudience", "")
+            }
+            formatted_projects.append(project)
+        
+        logger.info(f"List projects returned {len(formatted_projects)} projects")
+        return {"results": formatted_projects}
+    except Exception as e:
+        logger.error(f"Error listing projects: {str(e)}")
+        return {"results": [], "error": "An error occurred while listing projects"}
+
+
 # This catch-all route must be THE LAST ROUTE defined in the file
 # to ensure all API routes are processed first
 @app.get("/{full_path:path}")

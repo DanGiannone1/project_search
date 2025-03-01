@@ -33,10 +33,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ results }) => {
                                 href={result.githubUrl} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
-                                className="text-gray-400 hover:text-blue-400 transition-colors p-1 flex-shrink-0"
-                                title="Open in new tab"
+                                className="text-gray-400 hover:text-blue-400 transition-colors p-1 flex-shrink-0 group relative"
+                                title="View on GitHub"
                             >
                                 <ExternalLink className="w-6 h-6" />
+                                <span className="absolute -top-10 right-0 bg-neutral-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                                    View on GitHub
+                                </span>
                             </a>
                         </div>
                         

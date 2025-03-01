@@ -2,13 +2,14 @@
 import { useState, useEffect } from 'react';
 import SearchCard from './SearchCard';
 import ResultsDisplay from './ResultsDisplay';
-import { Project, Filters, AvailableOptions } from './types';  // Import AvailableOptions from types
+import { Project, Filters, AvailableOptions } from './types';
 import InlineFilterPanel from './InlineFilterPanel';
 
 function ProjectSearch() {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Project[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const apiUrl = import.meta.env.VITE_API_URL || '';
 
   const [filters, setFilters] = useState<Filters>({
@@ -36,25 +37,36 @@ function ProjectSearch() {
 
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
+  // Fetch filter options and all projects on component mount
   useEffect(() => {
-    async function fetchFilterOptions() {
+    async function initialize() {
       try {
-        const res = await fetch(`${apiUrl}/api/get_filter_options`);
-        if (!res.ok) {
+        // Fetch filter options
+        const optionsRes = await fetch(`${apiUrl}/api/get_filter_options`);
+        if (!optionsRes.ok) {
           throw new Error('Failed to fetch filter options');
         }
-        const data = await res.json();
-        setAvailableOptions(data);
+        const optionsData = await optionsRes.json();
+        setAvailableOptions(optionsData);
+        
+        // Fetch all projects
+        const projectsRes = await fetch(`${apiUrl}/api/list_projects`);
+        if (!projectsRes.ok) {
+          throw new Error('Failed to fetch projects');
+        }
+        const projectsData = await projectsRes.json();
+        setResults(projectsData.results);
       } catch (error) {
-        console.error('Error fetching filter options:', error);
+        console.error('Error during initialization:', error);
+      } finally {
+        setIsLoading(false);
       }
     }
 
-    fetchFilterOptions();
+    initialize();
   }, [apiUrl]);
 
   const handleSearch = async () => {
-    //if (!searchQuery.trim()) return;
     setIsSearching(true);
     try {
       const response = await fetch(`${apiUrl}/api/search_projects`, {
@@ -113,9 +125,17 @@ function ProjectSearch() {
           </div>
         )}
 
-        {results.length > 0 && (
+        {isLoading ? (
+          <div className="flex justify-center mt-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+          </div>
+        ) : results.length > 0 ? (
           <div className="mt-8">
             <ResultsDisplay results={results} />
+          </div>
+        ) : (
+          <div className="text-center mt-16 text-gray-400">
+            <p>No projects found.</p>
           </div>
         )}
       </div>
