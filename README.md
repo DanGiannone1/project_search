@@ -1,27 +1,14 @@
 # Project Search Platform
 
-A modern web application built with React and Python that enables users to discover, submit, and manage AI/ML projects. The platform features semantic search capabilities powered by Azure Cognitive Search and Azure OpenAI, along with a streamlined project submission and review workflow.
+A modern web application built with React and Python (FastAPI) that enables users to discover, submit, and manage AI/ML projects. The platform features semantic search capabilities powered by Azure Cognitive Search and Azure OpenAI, along with a streamlined project submission and review workflow.
 
 ## Features
 
-### Project Search
-- Natural language search functionality using Azure OpenAI embeddings
-- Advanced filtering options for programming languages, frameworks, Azure services, and more
-- Rich project cards displaying comprehensive project information
-- Sort capabilities based on various criteria
-
-### Project Submission
-- Simple GitHub repository submission process
-- Automated project information extraction from README files
-- User-friendly review and editing interface
-- Email notifications for administrators
-
-### Admin Dashboard
-- Dedicated admin interface for managing project submissions
-- Review and approval workflow
-- Ability to edit and enhance project metadata
-- Project rejection capabilities with reason tracking
-- Manage approved tags
+- **Semantic Search**: Natural language search functionality using Azure OpenAI embeddings
+- **Advanced Filtering**: Filter projects by programming languages, frameworks, Azure services, and more
+- **Project Submission**: Submit GitHub repositories with automated information extraction
+- **Review Workflow**: Admin dashboard for reviewing and approving submitted projects
+- **Responsive UI**: Modern interface with rich project cards and detailed information
 
 ## Technology Stack
 
@@ -33,16 +20,161 @@ A modern web application built with React and Python that enables users to disco
 - React Toastify for notifications
 
 ### Backend
-- Python with Flask
-- Azure OpenAI for query translation and embeddings, as well as tag standardization
+- Python with FastAPI
+- Azure OpenAI for query translation, embeddings, and tag standardization
 - Azure AI Search for hybrid search and filtering
 - Azure Cosmos DB for metadata storage
 - Azure Communication Services for email notifications
 
-### Deployment
+### Deployment Options
+- Azure Container Apps 
 
-- Azure App Service
-- Application Insights
+
+## Setup Requirements
+
+### Azure Services
+- Azure OpenAI instance
+- Azure AI Search service
+- Azure Cosmos DB account
+- Azure Communication Services setup
+- Azure Container Registry (for container deployment)
+- Azure Container Apps (for deployment)
+
+### Environment Variables
+Create a `.env` file in the `backend` directory with the following variables:
+
+```
+# Azure OpenAI
+AOAI_KEY=your_azure_openai_api_key
+AOAI_ENDPOINT=your_azure_openai_endpoint
+AOAI_DEPLOYMENT=your_azure_openai_deployment_name
+
+# Azure Cognitive Search
+AZURE_SEARCH_ENDPOINT=your_search_endpoint
+AZURE_SEARCH_KEY=your_search_key
+AZURE_SEARCH_INDEX=your_search_index_name
+
+# Azure Cosmos DB
+COSMOS_HOST=your_cosmos_host
+COSMOS_DATABASE_ID=your_cosmos_database_id
+COSMOS_CONTAINER_ID=your_cosmos_container_id
+
+# Azure Communication Services
+COMMUNICATION_SERVICES_CONNECTION_STRING=your_communication_services_connection_string
+
+# Email Configuration
+REVIEWER_EMAIL_GROUP=your_reviewer_email
+ADMIN_EMAILS=comma_separated_admin_emails
+```
+
+## Local Development
+
+### Method 1: Using start.ps1 Script (Recommended)
+
+The repository includes a PowerShell script `start.ps1` that automates the build and run process:
+
+1. Clone the repository
+   ```bash
+   git clone <repository-url>
+   cd project_search
+   ```
+
+2. Install dependencies
+   ```bash
+   # Frontend dependencies
+   cd frontend
+   npm install
+   
+   # Backend dependencies
+   cd ../backend
+   pip install -r requirements.txt
+   ```
+
+3. Create and configure your `.env` file in the backend directory
+
+4. Run the startup script
+   ```powershell
+   ./start.ps1
+   ```
+
+The script will:
+- Build the frontend React application
+- Copy the build files to the backend's dist directory
+- Start the FastAPI application with hot-reload
+
+### Method 2: Manual Setup
+
+1. Clone the repository
+   ```bash
+   git clone <repository-url>
+   cd project_search
+   ```
+
+2. Set up the frontend
+   ```bash
+   cd frontend
+   npm install
+   npm run build
+   ```
+
+3. Copy the build to the backend
+   ```bash
+   # From frontend directory
+   cp -r dist ../backend/
+   ```
+
+4. Set up the backend
+   ```bash
+   cd ../backend
+   pip install -r requirements.txt
+   ```
+
+5. Start the backend server
+   ```bash
+   uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+   ```
+
+The application will be available at http://localhost:8000
+
+## Deployment to Azure Container Apps
+
+### 1. Build and Push Docker Image
+
+1. Login to Azure Container Registry
+   ```bash
+   az acr login --name yourContainerRegistry
+   ```
+
+2. Build the Docker image
+   ```bash
+   docker build -t project-search:latest .
+   ```
+
+3. Tag the image for your registry
+   ```bash
+   docker tag project-search:latest yourContainerRegistry.azurecr.io/project-search:latest
+   ```
+
+4. Push the image to the registry
+   ```bash
+   docker push yourContainerRegistry.azurecr.io/project-search:latest
+   ```
+
+### 2. Deploy to Azure Container Apps
+
+Use the Azure CLI to deploy or update your Container App:
+
+```bash
+az containerapp update --name project-search --resource-group your-resource-group --image yourContainerRegistry.azurecr.io/project-search:latest
+```
+
+Alternatively, you can use the Azure Portal to create or update your Container App.
+
+### Environment Configuration
+
+Configure environment variables in the Azure Container App through:
+- Azure Portal: Container Apps → your app → Settings → Configuration
+- Azure CLI: Use the `--env-vars` parameter in your deployment command
 
 ## Project Workflow
 
@@ -60,94 +192,11 @@ A modern web application built with React and Python that enables users to disco
 4. Approve or reject submissions
 5. Approved projects are indexed for search
 
-### Search Functionality
-1. Enter natural language queries in the search box
-2. Apply filters using the sidebar
-3. View detailed project information in result cards
-4. Access project repositories directly through GitHub links
+## API Documentation
 
-## Setup Requirements
-
-### Azure Services
-- Azure OpenAI instance
-- Azure AI Search service
-- Azure Cosmos DB account
-- Azure Communication Services setup
-- Azure Application Insights resource (not needed for local)
-- Azure App Service (not needed for local)
-
-### Environment Variables
-```
-# Azure OpenAI
-AZURE_OPENAI_API_KEY=
-AZURE_OPENAI_ENDPOINT=
-AZURE_OPENAI_DEPLOYMENT_NAME=
-
-# Azure Cognitive Search
-AZURE_SEARCH_ENDPOINT=
-AZURE_SEARCH_KEY=
-AZURE_SEARCH_INDEX=
-
-# Azure Cosmos DB
-COSMOS_HOST=
-COSMOS_DATABASE_ID=
-COSMOS_CONTAINER_ID=
-
-# Azure Communication Services
-COMMUNICATION_SERVICES_CONNECTION_STRING=
-
-# Application Insights
-APPINSIGHTS_INSTRUMENTATIONKEY=
-
-# Email Configuration
-REVIEWER_EMAIL_GROUP=
-```
-
-## Local Development
-
-1. Clone the repository
-```bash
-git clone <repository-url>
-```
-
-2. Install frontend dependencies
-```bash
-cd frontend
-npm install
-```
-
-3. Install backend dependencies
-```bash
-cd backend
-pip install -r requirements.txt
-```
-
-4. Set up environment variables
-```bash
-cp .env.example .env
-# Edit .env with your Azure service credentials
-```
-
-5. Start the development servers
-```bash
-# Frontend
-cd frontend
-npm run dev
-
-# Backend
-cd backend
-python app.py
-```
-
-## Web App Deployment
-
-The application is designed to be deployed as an Azure Web App with the following considerations:
-
-1. Enable Azure AD authentication if required
-2. Configure CORS settings for your domain
-3. Set up environment variables in the Azure Web App configuration
-4. Enable Application Insights monitoring
-5. Configure scaling rules based on expected traffic
+When the FastAPI backend is running, you can access the API documentation at:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
 ## Contributing
 

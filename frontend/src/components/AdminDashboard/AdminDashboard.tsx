@@ -23,6 +23,7 @@ const AdminDashboard: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const apiUrl = import.meta.env.VITE_API_URL || '';
 
   // Our local copy of approved tags (matching the ApprovedTags interface)
   const [approvedTags, setApprovedTags] = useState<ApprovedTags | null>(null);
@@ -38,7 +39,7 @@ const AdminDashboard: React.FC = () => {
   // ---------------------------------------------------
   const fetchApprovedTags = async () => {
     try {
-      const response = await fetch('/api/admin/get_approved_tags');
+      const response = await fetch(`${apiUrl}/api/admin/get_approved_tags`);
       if (!response.ok) {
         throw new Error('Failed to fetch approved tags');
       }
@@ -89,7 +90,7 @@ const AdminDashboard: React.FC = () => {
       // but let's assume it's okay with these keys.
       // (If you do, you'd do a separate conversion step.)
 
-      const response = await fetch('/api/admin/update_approved_tags', {
+      const response = await fetch(`${apiUrl}/api/admin/update_approved_tags`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(serverPayload),
@@ -114,7 +115,7 @@ const AdminDashboard: React.FC = () => {
   const fetchPendingReviews = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/get_pending_reviews');
+      const response = await fetch(`${apiUrl}/api/admin/get_pending_reviews`);
       if (!response.ok) {
         throw new Error('Failed to fetch pending reviews');
       }
@@ -143,7 +144,7 @@ const AdminDashboard: React.FC = () => {
   const handleApprove = async (updatedProject: Project) => {
     setActionLoading(updatedProject.id);
     try {
-      const response = await fetch('/api/admin/approve_project', {
+      const response = await fetch(`${apiUrl}/api/admin/approve_project`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedProject),
@@ -168,7 +169,7 @@ const AdminDashboard: React.FC = () => {
   const handleReject = async (id: string, reason: string) => {
     setActionLoading(id);
     try {
-      const response = await fetch('/api/admin/reject_project', {
+      const response = await fetch(`${apiUrl}/api/admin/reject_project`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, reason }),

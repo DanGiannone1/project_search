@@ -1,9 +1,11 @@
-
 python-dotenv
 azure-cosmos
 openai
-Flask
-flask-cors
+fastapi
+uvicorn
+python-multipart
+jinja2
+starlette
 langchain
 langchain-openai
 azure-identity

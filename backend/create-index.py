@@ -1,4 +1,3 @@
-
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
@@ -50,9 +49,9 @@ ai_search_key = os.environ["AZURE_SEARCH_KEY"]
 ai_search_index = os.environ["AZURE_SEARCH_INDEX"]
 
 # Azure OpenAI
-aoai_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
-aoai_key = os.getenv("AZURE_OPENAI_API_KEY")
-aoai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+aoai_deployment = os.getenv("AOAI_DEPLOYMENT")
+aoai_key = os.getenv("AOAI_KEY")
+aoai_endpoint = os.getenv("AOAI_ENDPOINT")
 
 
 search_index_client = SearchIndexClient(ai_search_endpoint, AzureKeyCredential(ai_search_key))

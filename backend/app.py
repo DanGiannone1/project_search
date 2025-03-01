@@ -1,25 +1,28 @@
 # backend/app.py
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-from typing import List, Literal
+from fastapi import FastAPI, Request, Response, HTTPException, Depends, Header, Body
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
+from typing import List, Literal, Dict, Any, Optional, Union
 import os
 import hashlib
 from dotenv import load_dotenv
 import base64
 import json
 import requests
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from langchain_openai import AzureChatOpenAI
 from azure.communication.email import EmailClient
 from projects import search_projects, add_project
 from cosmosdb import CosmosDBManager
 from azure.identity import DefaultAzureCredential
 import logging
-from applicationinsights.flask.ext import AppInsights
+import uvicorn
 
-
+load_dotenv()
 
 # Initialize EmailClient
+
 acs_conn_str = os.getenv("COMMUNICATION_SERVICES_CONNECTION_STRING")
 email_client = EmailClient.from_connection_string(acs_conn_str)
 
@@ -37,17 +40,12 @@ except:
     raise Exception("Failed to authenticate via DefaultAzureCredential")        
 
 
-import getpass
-user = getpass.getuser()
-logger.info(f"User: {user}")
-
 # Load environment variables from .env file
-load_dotenv()
 
 
 
-COSMOS_DATABASE_ID = os.getenv("COSMOS_DATABASE_ID")
-COSMOS_CONTAINER_ID = os.getenv("COSMOS_CONTAINER_ID")
+COSMOS_DATABASE_ID = os.environ["COSMOS_DATABASE_ID"]
+COSMOS_CONTAINER_ID = os.environ["COSMOS_CONTAINER_ID"]
 
 cosmos_db = None
 
@@ -62,22 +60,21 @@ except Exception as e:
     logger.error(f"Failed to initialize CosmosDB connection: {str(e)}")
     raise Exception("Failed to initialize CosmosDB connection")
 
-app = Flask(__name__, static_folder='dist', static_url_path='')
-CORS(app)  # Enable CORS
+app = FastAPI(title="Project Search API")
 
-
-
-
-
-app.config['APPINSIGHTS_INSTRUMENTATIONKEY'] = os.getenv("APPINSIGHTS_INSTRUMENTATIONKEY")
-appinsights = AppInsights(app)
-
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Azure OpenAI configuration
-AOAI_KEY = os.getenv("AZURE_OPENAI_API_KEY")
-AOAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-AOAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
-
+AOAI_KEY = os.environ["AOAI_KEY"]
+AOAI_ENDPOINT = os.environ["AOAI_ENDPOINT"]
+AOAI_DEPLOYMENT = os.environ["AOAI_DEPLOYMENT"]
 
 
 primary_llm = AzureChatOpenAI(
@@ -99,13 +96,34 @@ class ExtractionResponse(BaseModel):
     frameworks: List[str]
     azure_services: List[str]
     design_patterns: List[str]
-    project_type: Literal['Educational/Demo', 'Accelerator']  # Modified
+    project_type: Literal['Educational/Demo', 'Accelerator']
     code_complexity: Literal['Beginner', 'Intermediate', 'Advanced']
     business_value: str
     target_audience: str
     Industries: List[str]
 
 
+class ProjectSubmission(BaseModel):
+    githubUrl: str
+
+class ProjectReview(BaseModel):
+    projectName: str
+    projectDescription: str
+    githubUrl: str
+    programmingLanguages: List[str] = []
+    frameworks: List[str] = []
+    azureServices: List[str] = []
+    designPatterns: List[str] = []
+    projectType: str
+    codeComplexity: str
+    businessValue: str
+    targetAudience: str
+    owner: Optional[str] = "anonymous"
+
+class FilterOptions(BaseModel):
+    query: Optional[str] = ""
+    filters: Optional[Dict[str, Any]] = {}
+    sort: Optional[str] = ""
 
 # ----------------------------
 # Helper Functions
@@ -115,8 +133,6 @@ def generate_document_id(github_url: str) -> str:
     """Generate a unique, deterministic ID for a document."""
     unique_string = f"{github_url}"  # Use the GitHub URL for uniqueness
     return hashlib.md5(unique_string.encode()).hexdigest()
-
-
 
 
 def fetch_readme(github_url: str) -> str:
@@ -203,7 +219,7 @@ def send_email(data: dict) -> bool:
         project_name = data.get('projectName', 'N/A')
         project_description = data.get('projectDescription', 'No description provided')
         github_url = data.get('githubUrl', 'N/A')
-        owner = data.get('owner', 'anonymous')  # New line
+        owner = data.get('owner', 'anonymous')
         programming_languages = ', '.join(data.get('programmingLanguages', []))
         frameworks = ', '.join(data.get('frameworks', []))
         azure_services = ', '.join(data.get('azureServices', []))
@@ -221,7 +237,7 @@ Hello,
 A new project has been submitted for review. Please find the details below:
 
 **Project Name:** {project_name}
-**Owner:** {owner}  # New line
+**Owner:** {owner}
 **Description:** {project_description}
 **GitHub URL:** {github_url}
 **Programming Languages:** {programming_languages}
@@ -289,7 +305,7 @@ Automated System
             </div>
             <div class="content">
                 <div class="details"><strong>Project Name:</strong> {project_name}</div>
-                <div class="details"><strong>Owner:</strong> {owner}</div>  # New line
+                <div class="details"><strong>Owner:</strong> {owner}</div>
                 <div class="details"><strong>Description:</strong> {project_description}</div>
                 <div class="details"><strong>GitHub URL:</strong> <a href="{github_url}">{github_url}</a></div>
                 <div class="details"><strong>Programming Languages:</strong> {programming_languages}</div>
@@ -308,8 +324,6 @@ Automated System
     </body>
 </html>
 """
-        # Send email logic remains unchanged
-
 
         # Fetch recipient email from environment variable
         recipient_email = os.getenv("REVIEWER_EMAIL_GROUP", "dangiannone@microsoft.com")
@@ -342,31 +356,22 @@ Automated System
 # API Routes
 # ----------------------------
 
+# Mount static files for frontend
+app.mount("/static", StaticFiles(directory="dist/assets"), name="static")
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve(path):
-    # If the path exists in the build folder, serve that file
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    else:
-        # Otherwise, serve the index.html (for React Router)
-        return send_from_directory(app.static_folder, 'index.html')
-
-
-@app.route('/api/admin/get_pending_reviews', methods=['GET'])
-def get_pending_reviews():
+@app.get("/api/admin/get_pending_reviews")
+async def get_pending_reviews():
     try:
         query = "SELECT * FROM c WHERE c.review_status = 'pending' AND c.partitionKey = 'project'"
         parameters = []
         pending_reviews = cosmos_db.query_items(query, parameters)
-        return jsonify(pending_reviews), 200
+        return pending_reviews
     except Exception as e:
         print(f"Error fetching pending reviews: {e}")
-        return jsonify({"error": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.route('/api/get_filter_options', methods=['GET'])
-def get_filter_options():
+@app.get("/api/get_filter_options")
+async def get_filter_options():
     try:
         logger.info("fetching_filter_options")
         
@@ -426,7 +431,7 @@ def get_filter_options():
             "customers": sorted(customers)  # Add customers to response
         }
 
-        return jsonify(data), 200
+        return data
 
     except Exception as e:
         print(f"Error in get_filter_options: {e}")
@@ -434,47 +439,43 @@ def get_filter_options():
             error=str(e),
             error_type=type(e).__name__
         )
-        return jsonify({"error": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
     
 
-@app.route('/api/admin/approve_project', methods=['POST'])
-def approve_project():
+@app.post("/api/admin/approve_project")
+async def approve_project(project: Dict[str, Any]):
     try:
-        data = request.get_json()
-        data['review_status'] = 'approved'
-        data['partitionKey'] = 'project'
+        project['review_status'] = 'approved'
+        project['partitionKey'] = 'project'
         
         # Update the item in Cosmos
-        cosmos_db.upsert_item(data)
+        cosmos_db.upsert_item(project)
 
         # Add the project to the search index
-        result = add_project(data)
+        result = add_project(project)
         if result.get("success"):
-            return jsonify({"message": "Project approved and added to index.", "project": result["project"]}), 200
+            return {"message": "Project approved and added to index.", "project": result["project"]}
         else:
-            return jsonify({"error": result.get("error", "Failed to add project.")}), 500
+            raise HTTPException(status_code=500, detail=result.get("error", "Failed to add project."))
     except Exception as e:
         print(f"Error in approve_project: {e}")
-        return jsonify({"error": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
-# Update /api/admin/reject_project endpoint
-@app.route('/api/admin/reject_project', methods=['POST'])
-def reject_project():
+@app.post("/api/admin/reject_project")
+async def reject_project(project: Dict[str, Any]):
     try:
-        data = request.get_json()
         # Remove from Cosmos DB
-        cosmos_db.delete_item(item_id=data['id'], partition_key='project')
-        return jsonify({"message": "Project rejected and removed from pending reviews."}), 200
+        cosmos_db.delete_item(item_id=project['id'], partition_key='project')
+        return {"message": "Project rejected and removed from pending reviews."}
     except Exception as e:
         print(f"Error in reject_project: {e}")
-        return jsonify({"error": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.route('/api/check_admin', methods=['GET'])
-def check_admin():
+@app.get("/api/check_admin")
+async def check_admin(x_ms_client_principal: Optional[str] = Header(None)):
     try:
-        client_principal = request.headers.get('X-MS-CLIENT-PRINCIPAL')
-        if client_principal:
-            decoded = base64.b64decode(client_principal).decode('utf-8')
+        if x_ms_client_principal:
+            decoded = base64.b64decode(x_ms_client_principal).decode('utf-8')
             client_principal = json.loads(decoded)
             user_identity = get_user_identity(client_principal)
         else:
@@ -484,13 +485,13 @@ def check_admin():
         admin_list = [email.strip().lower() for email in admin_emails.split(",") if email.strip()]
 
         is_admin = user_identity.lower() in admin_list
-        return jsonify({"isAdmin": is_admin}), 200
+        return {"isAdmin": is_admin}
     except Exception as e:
         print(f"Error checking admin status: {str(e)}")
-        return jsonify({"isAdmin": False, "error": str(e)}), 500
+        return {"isAdmin": False, "error": str(e)}
 
-@app.route('/api/admin/get_approved_tags', methods=['GET'])
-def get_approved_tags():
+@app.get("/api/admin/get_approved_tags")
+async def get_approved_tags():
     try:
         query = "SELECT * FROM c WHERE c.id = 'approved_tags' AND c.partitionKey = 'metadata'"
         results = cosmos_db.query_items(query)
@@ -498,7 +499,7 @@ def get_approved_tags():
         
         if tags:
             tag_data = tags[0]
-            return jsonify({
+            return {
                 "id": "approved_tags",
                 "partitionKey": "metadata",
                 "programming_languages": tag_data.get('programming_languages', []),
@@ -506,9 +507,9 @@ def get_approved_tags():
                 "azure_services": tag_data.get('azure_services', []),
                 "design_patterns": tag_data.get('design_patterns', []),
                 "industries": tag_data.get('industries', []),
-                "projectTypes": tag_data.get('project_types', []),  # Add this line
+                "projectTypes": tag_data.get('project_types', []),
                 "azure_service_mapping": tag_data.get('azure_service_mapping', {})
-            }), 200
+            }
         else:
             # Return empty structure if not found
             empty_tags = {
@@ -519,32 +520,30 @@ def get_approved_tags():
                 "azure_services": [],
                 "design_patterns": [],
                 "industries": [],
-                "projectTypes": [],  # Add this line as empty
+                "projectTypes": [],
                 "azure_service_mapping": {}
             }
-            return jsonify(empty_tags), 200
+            return empty_tags
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.route('/api/admin/update_approved_tags', methods=['POST'])
-def update_approved_tags():
+@app.post("/api/admin/update_approved_tags")
+async def update_approved_tags(tags: Dict[str, Any]):
     try:
-        data = request.get_json()
-        
-        print("raw payload:\n" , json.dumps(data, indent=2))
+        print("raw payload:\n" , json.dumps(tags, indent=2))
 
         # Create the updated structure, now including project_types
         updated_tags = {
             "id": "approved_tags",
             "partitionKey": "metadata",
-            "programming_languages": data.get('programmingLanguages', []),
-            "frameworks": data.get('frameworks', []),
-            "azure_services": data.get('azureServices', []),
-            "design_patterns": data.get('designPatterns', []),
-            "industries": data.get('industries', []),
-            "project_types": data.get('projectTypes', []),  # Add this line
-            "azure_service_mapping": data.get('azureServiceMapping', {})
+            "programming_languages": tags.get('programmingLanguages', []),
+            "frameworks": tags.get('frameworks', []),
+            "azure_services": tags.get('azureServices', []),
+            "design_patterns": tags.get('designPatterns', []),
+            "industries": tags.get('industries', []),
+            "project_types": tags.get('projectTypes', []),
+            "azure_service_mapping": tags.get('azureServiceMapping', {})
         }
         
         print("Updated tags:")
@@ -552,102 +551,61 @@ def update_approved_tags():
 
         # Upsert into Cosmos DB
         cosmos_db.upsert_item(updated_tags)
-        return jsonify({"message": "Approved tags updated successfully."}), 200
+        return {"message": "Approved tags updated successfully."}
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-# @app.route('/api/get_service_mapping', methods=['GET'])
-# def get_service_mapping():
-#     try:
-#         query = "SELECT * FROM c WHERE c.id = 'approved_tags' AND c.partitionKey = 'metadata'"
-#         results = cosmos_db.query_items(query)
-#         tags = list(results)
-        
-#         if not tags:
-#             return jsonify({"error": "Service mapping not found"}), 404
-            
-#         # Get the service mapping
-#         service_mapping = tags[0].get('azure_service_mapping', {})
-        
-#         # Create categorized structure
-#         categorized_services = {
-#             "AI": [],
-#             "Data": [],
-#             "Application": []
-#         }
-        
-#         # Categorize services
-#         for service, category in service_mapping.items():
-#             if category in categorized_services:
-#                 categorized_services[category].append(service)
-                
-#         # Sort services within each category
-#         for category in categorized_services:
-#             categorized_services[category].sort()
-            
-#         return jsonify(categorized_services), 200
-        
-#     except Exception as e:
-#         print(f"Error fetching service mapping: {str(e)}")
-#         return jsonify({"error": str(e)}), 500
-
-@app.route('/api/search_projects', methods=['POST'])
-def search():
+@app.post("/api/search_projects")
+async def search(filter_options: FilterOptions):
     try:
+        query = filter_options.query or ""
+        filters = filter_options.filters or {}
+        sort = filter_options.sort or ""
 
-        data = request.get_json()
-        query = data.get('query', '')
-        filters = data.get('filters', {})
-        sort = data.get('sort', '')
-
-        logger.info(f"Search started - Query: {data.get('query')}, Filters: {data.get('filters')}, Sort: {data.get('sort')}")
+        logger.info(f"Search started - Query: {query}, Filters: {filters}, Sort: {sort}")
 
         print(f"Received search query: {query}")
         print(f"Filters: {filters}")
         print(f"Sort: {sort}")
 
-
         results = search_projects(query, filters, sort)
         print(f"Found {len(results)} results")
         logger.info(f"Search completed - Found {len(results)} results for query: {query}")
 
-        return jsonify({
+        return {
             "results": results,
             "message": f"Found {len(results)} matching projects"
-        })
+        }
 
     except Exception as e:
-        logger.error(f"Search failed - Error: {str(e)}, Input: {data}")
-        return jsonify({
+        logger.error(f"Search failed - Error: {str(e)}")
+        return {
             "results": [],
             "error": "An error occurred while searching projects"
-        }), 500
+        }
 
 
-
-@app.route('/api/submit_repo', methods=['POST'])
-def submit_repo():
+@app.post("/api/submit_repo")
+async def submit_repo(submission: ProjectSubmission, x_ms_client_principal: Optional[str] = Header(None)):
     try:
-        data = request.get_json()
-        github_url = data.get('githubUrl', '')
+        github_url = submission.githubUrl
 
         if not github_url.strip():
-            return jsonify({"error": "GitHub URL is required"}), 400
+            raise HTTPException(status_code=400, detail="GitHub URL is required")
 
         readme_content = fetch_readme(github_url)
 
         if not readme_content:
-            return jsonify({"error": "Failed to fetch README.md from the repository"}), 404
+            raise HTTPException(status_code=404, detail="Failed to fetch README.md from the repository")
 
         report = process_readme(readme_content)
         print(report.model_dump_json(indent=2))
 
         if report:
             # Capture user identity
-            client_principal = request.headers.get('X-MS-CLIENT-PRINCIPAL')
-            if client_principal:
-                decoded = base64.b64decode(client_principal).decode('utf-8')
+            if x_ms_client_principal:
+                decoded = base64.b64decode(x_ms_client_principal).decode('utf-8')
                 client_principal = json.loads(decoded)
                 user_identity = get_user_identity(client_principal)
             else:
@@ -656,36 +614,43 @@ def submit_repo():
             report_dict = report.model_dump()
             report_dict['owner'] = user_identity
 
-            return jsonify(report_dict), 200
+            return report_dict
         else:
-            return jsonify({"error": "Failed to extract project information"}), 500
+            raise HTTPException(status_code=500, detail="Failed to extract project information")
 
     except Exception as e:
         print(f"/submit_repo endpoint error: {str(e)}")
-        return jsonify({"error": "An error occurred while processing the repository"}), 500
+        raise HTTPException(status_code=500, detail="An error occurred while processing the repository")
 
 
-@app.route('/api/send_for_review', methods=['POST'])
-def send_for_review():
-    data = request.get_json()
-    success = send_email(data)
+@app.post("/api/send_for_review")
+async def send_for_review(data: ProjectReview):
+    data_dict = data.model_dump()
+    success = send_email(data_dict)
     if success:
         try:
-            data['id'] = generate_document_id(data.get('githubUrl', ''))
-            # Instead of partitionKey = 'pending_review', use 'project'
-            data['partitionKey'] = 'project'
-            data['review_status'] = 'pending'  # NEW
+            data_dict['id'] = generate_document_id(data_dict.get('githubUrl', ''))
+            data_dict['partitionKey'] = 'project'
+            data_dict['review_status'] = 'pending'
             # Upsert into Cosmos DB
-            cosmos_db.upsert_item(data)
-            return jsonify({"message": "Review request sent successfully."}), 200
+            cosmos_db.upsert_item(data_dict)
+            return {"message": "Review request sent successfully."}
         except Exception as e:
             print(f"Error adding pending review: {e}")
-            return jsonify({"error": str(e)}), 500
+            raise HTTPException(status_code=500, detail=str(e))
     else:
-        return jsonify({"error": "Failed to send review request."}), 500
+        raise HTTPException(status_code=500, detail="Failed to send review request.")
 
-
-
+# This catch-all route must be THE LAST ROUTE defined in the file
+# to ensure all API routes are processed first
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    # If the path exists in static files, let the StaticFiles handle it
+    if full_path.startswith("assets/"):
+        return FileResponse(f"dist/{full_path}")
+    # Otherwise, serve index.html for client-side routing
+    return FileResponse("dist/index.html")
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

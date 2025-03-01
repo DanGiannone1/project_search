@@ -29,6 +29,10 @@ Copy-Item -Path "dist" -Destination "$($backendPath)\dist" -Recurse
 Write-Host "Navigating to $backendPath"
 Set-Location $backendPath
 
-# Run the Flask application
-Write-Host "Starting Flask application..."
-flask run --host=0.0.0.0 --port=8000
+# Run the FastAPI application using Uvicorn
+Write-Host "Starting FastAPI application with Uvicorn..."
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+
+# Alternative: Run using Python directly
+# Write-Host "Starting FastAPI application..."
+# python app.py

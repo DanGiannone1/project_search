@@ -11,12 +11,13 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkedAdmin, setCheckedAdmin] = useState(false);
   const [showAdminView, setShowAdminView] = useState(false);
+  const apiUrl = import.meta.env.VITE_API_URL || '';
 
   useEffect(() => {
     // Check if the user is admin
     async function checkAdminStatus() {
       try {
-        const response = await fetch('/api/check_admin', {
+        const response = await fetch(`${apiUrl}/api/check_admin`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -29,7 +30,7 @@ function App() {
       }
     }
     checkAdminStatus();
-  }, []);
+  }, [apiUrl]);
 
   if (!checkedAdmin) {
     return <div className="w-screen h-screen flex items-center justify-center text-white">Checking access...</div>;

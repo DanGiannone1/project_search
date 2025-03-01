@@ -17,7 +17,7 @@ AI_SEARCH_ENDPOINT = os.getenv("AZURE_SEARCH_ENDPOINT")
 AI_SEARCH_KEY = os.getenv("AZURE_SEARCH_KEY")
 AI_SEARCH_INDEX = os.getenv("AZURE_SEARCH_INDEX")
 
-print("Index: ", AI_SEARCH_INDEX)
+
 
 search_client = SearchClient(
     endpoint=AI_SEARCH_ENDPOINT,
@@ -26,9 +26,9 @@ search_client = SearchClient(
 )
 
 # Azure OpenAI configuration
-AOAI_KEY = os.getenv("AZURE_OPENAI_API_KEY")
-AOAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-AOAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+AOAI_KEY = os.getenv("AOAI_KEY")
+AOAI_ENDPOINT = os.getenv("AOAI_ENDPOINT")
+AOAI_DEPLOYMENT = os.getenv("AOAI_DEPLOYMENT")
 
 
 

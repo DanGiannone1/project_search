@@ -16,13 +16,14 @@ const AddProjectDialog: React.FC = () => {
     const [extractedData, setExtractedData] = useState<Project | null>(null);
     const [isSubmittingProject, setIsSubmittingProject] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const apiUrl = import.meta.env.VITE_API_URL || '';
 
     const handleSubmitRepo = async () => {
         if (!githubUrl.trim()) return;
         setIsSubmittingRepo(true);
         setError(null);
         try {
-            const response = await fetch('/api/submit_repo', {
+            const response = await fetch(`${apiUrl}/api/submit_repo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ githubUrl }),
@@ -54,7 +55,7 @@ const AddProjectDialog: React.FC = () => {
         setIsSubmittingProject(true);
         setError(null);
         try {
-            const response = await fetch('/api/send_for_review', {
+            const response = await fetch(`${apiUrl}/api/send_for_review`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(extractedData),

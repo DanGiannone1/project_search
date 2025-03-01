@@ -9,6 +9,7 @@ function ProjectSearch() {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<Project[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const apiUrl = import.meta.env.VITE_API_URL || '';
 
   const [filters, setFilters] = useState<Filters>({
     programmingLanguages: [],
@@ -38,7 +39,7 @@ function ProjectSearch() {
   useEffect(() => {
     async function fetchFilterOptions() {
       try {
-        const res = await fetch('/api/get_filter_options');
+        const res = await fetch(`${apiUrl}/api/get_filter_options`);
         if (!res.ok) {
           throw new Error('Failed to fetch filter options');
         }
@@ -50,13 +51,13 @@ function ProjectSearch() {
     }
 
     fetchFilterOptions();
-  }, []);
+  }, [apiUrl]);
 
   const handleSearch = async () => {
     //if (!searchQuery.trim()) return;
     setIsSearching(true);
     try {
-      const response = await fetch('/api/search_projects', {
+      const response = await fetch(`${apiUrl}/api/search_projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
